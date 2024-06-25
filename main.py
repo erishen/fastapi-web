@@ -30,4 +30,4 @@ def update_item(item_id: int, item: Item):
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 8080))
-    run(app, port=port)
+    run(app, host="0.0.0.0", port=port)
