@@ -25,7 +25,7 @@ appname=python-app-$appid
 pm2 delete $appname
 pm2 web
 pm2 start run.sh\
-	-i $cpu\
+	-i 1\
 	--name $appname\
 	--merge-logs\
 	--log-date-format="YYYY-MM-DD HH:mm:ss"\
