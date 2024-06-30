@@ -12,7 +12,7 @@ export APP_ENV=development
 
 # 运行 Python 程序
 echo "Running Python program..."
-python main.py
+python -m app.main
 
 # 检查程序是否成功运行
 if [ $? -ne 0 ]; then
