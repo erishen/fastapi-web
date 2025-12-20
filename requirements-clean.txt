@@ -23,3 +23,6 @@ httpx==0.27.0
 
 # JSON 处理优化（可选）
 orjson==3.10.5
+
+# 配置管理（必需）
+pydantic-settings==2.0.3

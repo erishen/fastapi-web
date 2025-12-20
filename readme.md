@@ -21,7 +21,13 @@ brew services start mysql  # macOS
 conda activate fastapi-web
 ```
 
-### 3. 运行项目
+### 3. 安装依赖
+```bash
+# 安装核心依赖
+pip install -r requirements-clean.txt
+```
+
+### 4. 运行项目
 ```bash
 python -m app.main
 ```
