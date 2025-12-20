@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse
 from .config import settings
 from .middleware import setup_middleware
 from .exceptions import setup_exception_handlers
-from .routers import items, system
+from .routers import items, system, auth
 from . import models
 from .database import engine
 
@@ -32,6 +32,7 @@ def create_app() -> FastAPI:
     
     # 注册路由
     app.include_router(system.router)
+    app.include_router(auth.router)  # 认证路由
     app.include_router(items.router)
     
     # 自定义 ReDoc 页面
