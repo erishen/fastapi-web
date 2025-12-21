@@ -18,6 +18,13 @@ class Settings(BaseSettings):
     # 数据库配置
     database_url: str = "sqlite:///./app.db"
     
+    # Redis 配置
+    redis_url: str = "redis://localhost:6379/0"
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    redis_db: int = 0
+    redis_password: Optional[str] = None
+    
     # API 文档配置
     docs_url: str = "/docs"
     redoc_url: Optional[str] = None  # 使用自定义 ReDoc
@@ -39,6 +46,9 @@ class Settings(BaseSettings):
     secret_key: str = "your-secret-key-change-this-in-production"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
+    
+    # 缓存配置
+    cache_expire_seconds: int = 3600  # 1小时
     
     class Config:
         env_file = ".env"

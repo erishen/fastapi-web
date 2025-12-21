@@ -3,7 +3,8 @@ from fastapi.responses import HTMLResponse
 from .config import settings
 from .middleware import setup_middleware
 from .exceptions import setup_exception_handlers
-from .routers import items, system, auth
+from .routers import items, system, auth, redis
+from .redis_client import redis_client
 from . import models
 from .database import engine
 
@@ -30,10 +31,33 @@ def create_app() -> FastAPI:
     # 设置异常处理器
     setup_exception_handlers(app)
     
+    # 应用启动事件
+    @app.on_event("startup")
+    async def startup_event():
+        """应用启动时的初始化"""
+        print("🚀 FastAPI 应用启动中...")
+        
+        # 连接 Redis
+        await redis_client.connect()
+        
+        print("✅ 应用启动完成")
+    
+    # 应用关闭事件
+    @app.on_event("shutdown")
+    async def shutdown_event():
+        """应用关闭时的清理"""
+        print("🛑 FastAPI 应用关闭中...")
+        
+        # 断开 Redis 连接
+        await redis_client.disconnect()
+        
+        print("✅ 应用关闭完成")
+    
     # 注册路由
     app.include_router(system.router)
     app.include_router(auth.router)  # 认证路由
     app.include_router(items.router)
+    app.include_router(redis.router)  # Redis 路由
     
     # 自定义 ReDoc 页面
     @app.get("/redoc", response_class=HTMLResponse, include_in_schema=False)
