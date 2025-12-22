@@ -4,7 +4,7 @@
 
 ```
 fastapi-web/
-├── docker-compose.yml      # Docker Compose 配置
+├── docker compose.yml      # Docker Compose 配置
 ├── Dockerfile              # FastAPI 应用镜像
 ├── .dockerignore           # Docker 构建忽略文件
 ├── nginx.conf              # Nginx 反向代理配置
@@ -36,13 +36,13 @@ fastapi-web/
 cd fastapi-web
 
 # 构建并启动所有服务
-docker-compose up -d
+docker compose up -d
 
 # 查看服务状态
-docker-compose ps
+docker compose ps
 
 # 查看应用日志
-docker-compose logs -f app
+docker compose logs -f app
 ```
 
 ### 3. 验证服务
@@ -55,10 +55,10 @@ curl http://localhost:8080/health
 # 浏览器访问: http://localhost:8080/docs
 
 # 检查 MySQL
-docker-compose exec mysql mysql -uroot -ppassword -e "SELECT 1"
+docker compose exec mysql mysql -uroot -ppassword -e "SELECT 1"
 
 # 检查 Redis
-docker-compose exec redis redis-cli ping
+docker compose exec redis redis-cli ping
 ```
 
 ## 常用命令
@@ -67,69 +67,69 @@ docker-compose exec redis redis-cli ping
 
 ```bash
 # 启动所有服务
-docker-compose up -d
+docker compose up -d
 
 # 停止所有服务
-docker-compose down
+docker compose down
 
 # 停止并删除数据卷
-docker-compose down -v
+docker compose down -v
 
 # 重启服务
-docker-compose restart
+docker compose restart
 
 # 重启特定服务
-docker-compose restart app
+docker compose restart app
 ```
 
 ### 查看日志
 
 ```bash
 # 查看所有服务日志
-docker-compose logs
+docker compose logs
 
 # 查看特定服务日志
-docker-compose logs app
-docker-compose logs mysql
-docker-compose logs redis
+docker compose logs app
+docker compose logs mysql
+docker compose logs redis
 
 # 实时查看日志
-docker-compose logs -f app
+docker compose logs -f app
 
 # 查看最后 100 行日志
-docker-compose logs --tail=100 app
+docker compose logs --tail=100 app
 ```
 
 ### 执行命令
 
 ```bash
 # 进入应用容器
-docker-compose exec app bash
+docker compose exec app bash
 
 # 进入 MySQL 容器
-docker-compose exec mysql bash
+docker compose exec mysql bash
 
 # 进入 Redis 容器
-docker-compose exec redis sh
+docker compose exec redis sh
 
 # 在应用容器中运行 Python 命令
-docker-compose exec app python -c "import app; print(app.__version__)"
+docker compose exec app python -c "import app; print(app.__version__)"
 ```
 
 ### 数据库操作
 
 ```bash
 # 连接 MySQL
-docker-compose exec mysql mysql -uroot -ppassword fastapi_web
+docker compose exec mysql mysql -uroot -ppassword fastapi_web
 
 # 备份数据库
-docker-compose exec mysql mysqldump -uroot -ppassword fastapi_web > backup.sql
+docker compose exec mysql mysqldump -uroot -ppassword fastapi_web > backup.sql
 
 # 恢复数据库
-docker-compose exec -T mysql mysql -uroot -ppassword fastapi_web < backup.sql
+docker compose exec -T mysql mysql -uroot -ppassword fastapi_web < backup.sql
 
 # 查看 Redis 数据
-docker-compose exec redis redis-cli
+docker compose exec redis redis-cli
 # 在 Redis CLI 中执行命令
 # > KEYS *
 # > GET key_name
@@ -139,7 +139,7 @@ docker-compose exec redis redis-cli
 
 ### 修改环境变量
 
-编辑 `docker-compose.yml` 中的 `environment` 部分或创建 `.env` 文件：
+编辑 `docker compose.yml` 中的 `environment` 部分或创建 `.env` 文件：
 
 ```bash
 # 创建 .env 文件
@@ -170,7 +170,7 @@ EOF
 
 4. **配置 Redis 密码**
    ```bash
-   # 修改 docker-compose.yml
+   # 修改 docker compose.yml
    redis:
      command: redis-server --requirepass your-redis-password
    ```
@@ -204,33 +204,33 @@ proxy_cache_path /var/cache/nginx levels=1:2 keys_zone=api_cache:10m;
 
 ```bash
 # 检查 MySQL 服务状态
-docker-compose ps mysql
+docker compose ps mysql
 
 # 查看 MySQL 日志
-docker-compose logs mysql
+docker compose logs mysql
 
 # 测试连接
-docker-compose exec app python -c "from app.database import engine; engine.connect()"
+docker compose exec app python -c "from app.database import engine; engine.connect()"
 ```
 
 ### Redis 连接失败
 
 ```bash
 # 检查 Redis 服务
-docker-compose ps redis
+docker compose ps redis
 
 # 测试 Redis 连接
-docker-compose exec redis redis-cli ping
+docker compose exec redis redis-cli ping
 ```
 
 ### 应用启动失败
 
 ```bash
 # 查看详细日志
-docker-compose logs app
+docker compose logs app
 
 # 进入容器调试
-docker-compose exec app bash
+docker compose exec app bash
 ```
 
 ### 端口被占用
@@ -241,7 +241,7 @@ lsof -i :8080
 lsof -i :3306
 lsof -i :6379
 
-# 修改 docker-compose.yml 中的端口映射
+# 修改 docker compose.yml 中的端口映射
 # 例如: "8081:8080" 将容器的 8080 映射到主机的 8081
 ```
 
@@ -265,7 +265,7 @@ docker run --rm -v fastapi-web_mysql_data:/data -v $(pwd):/backup \
 
 ```bash
 # 删除停止的容器
-docker-compose down
+docker compose down
 
 # 删除未使用的镜像
 docker image prune
@@ -274,7 +274,7 @@ docker image prune
 docker volume prune
 
 # 完全清理（谨慎操作）
-docker-compose down -v
+docker compose down -v
 docker system prune -a
 ```
 
@@ -290,7 +290,7 @@ docker stats fastapi-redis
 
 ### 配置日志驱动
 
-在 `docker-compose.yml` 中添加：
+在 `docker compose.yml` 中添加：
 
 ```yaml
 services:
@@ -306,7 +306,7 @@ services:
 
 ### 添加新服务
 
-在 `docker-compose.yml` 中添加新服务：
+在 `docker compose.yml` 中添加新服务：
 
 ```yaml
 services:

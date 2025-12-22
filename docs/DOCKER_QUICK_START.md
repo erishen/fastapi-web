@@ -17,7 +17,7 @@ make up
 ### 2. 验证服务
 ```bash
 # 查看服务状态
-docker-compose ps
+docker compose ps
 
 # 检查应用健康状态
 curl http://localhost:8080/health
@@ -81,21 +81,21 @@ make down
 
 ```bash
 # 启动
-docker-compose up -d
+docker compose up -d
 
 # 停止
-docker-compose down
+docker compose down
 
 # 查看日志
-docker-compose logs -f
+docker compose logs -f
 
 # 查看状态
-docker-compose ps
+docker compose ps
 
 # 进入容器
-docker-compose exec app bash
-docker-compose exec mysql bash
-docker-compose exec redis sh
+docker compose exec app bash
+docker compose exec mysql bash
+docker compose exec redis sh
 ```
 
 ---
@@ -144,10 +144,10 @@ make logs
 make logs-app
 
 # 查看最后 100 行
-docker-compose logs --tail=100 app
+docker compose logs --tail=100 app
 
 # 实时查看特定服务
-docker-compose logs -f mysql
+docker compose logs -f mysql
 ```
 
 ### 进入容器
@@ -211,7 +211,7 @@ redis> FLUSHDB
 
 ```bash
 # 查看详细日志
-docker-compose logs app
+docker compose logs app
 
 # 检查端口是否被占用
 lsof -i :8080
@@ -227,36 +227,36 @@ make up
 
 ```bash
 # 检查 MySQL 服务
-docker-compose ps mysql
+docker compose ps mysql
 
 # 查看 MySQL 日志
-docker-compose logs mysql
+docker compose logs mysql
 
 # 进入 MySQL 容器测试
-docker-compose exec mysql mysql -uroot -ppassword -e "SELECT 1"
+docker compose exec mysql mysql -uroot -ppassword -e "SELECT 1"
 ```
 
 ### Redis 连接失败
 
 ```bash
 # 检查 Redis 服务
-docker-compose ps redis
+docker compose ps redis
 
 # 测试 Redis 连接
-docker-compose exec redis redis-cli ping
+docker compose exec redis redis-cli ping
 ```
 
 ### 应用无法访问
 
 ```bash
 # 检查应用是否运行
-docker-compose ps app
+docker compose ps app
 
 # 测试应用健康状态
 curl http://localhost:8080/health
 
 # 查看应用日志
-docker-compose logs -f app
+docker compose logs -f app
 ```
 
 ---
@@ -292,7 +292,7 @@ worker_connections 2048;
 
 ### 1. 修改密钥和密码
 
-编辑 `docker-compose.yml`:
+编辑 `docker compose.yml`:
 ```yaml
 environment:
   - SECRET_KEY=your-production-secret-key
@@ -328,7 +328,7 @@ environment:
 make down
 
 # 删除卷（谨慎操作）
-docker-compose down -v
+docker compose down -v
 
 # 清理未使用的 Docker 资源
 make prune
@@ -349,7 +349,7 @@ docker system prune -a
 make help
 
 # 查看 Docker Compose 帮助
-docker-compose --help
+docker compose --help
 ```
 
 ---

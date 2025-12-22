@@ -1,152 +1,250 @@
-# 🚀 快速开始
+# FastAPI Web 应用
 
-## 方法一：使用 MySQL 数据库（推荐）
+一个基于 FastAPI 的商品管理系统，支持 Docker 容器化部署。
 
-### 1. 初始化 MySQL 数据库
+## 🚀 快速开始
+
+### 启动应用
+
 ```bash
-# 确保 MySQL 服务运行
-brew services start mysql  # macOS
-# 或 sudo systemctl start mysql  # Linux
+# 使用 Make（推荐）
+make up
 
-# 初始化数据库
-./scripts/init_mysql.sh
+# 或使用脚本
+./docker-start.sh up
+
+# 或使用 Docker Compose
+docker compose up -d
 ```
 
-### 2. 设置 Conda 环境
-```bash
-# 运行 Conda 环境设置脚本
-./scripts/setup_env.sh
+### 访问应用
 
-# 激活 Conda 环境
-conda activate fastapi-web
+- **API 文档**: http://localhost:8080/docs
+- **应用首页**: http://localhost:8080
+
+### 停止应用
+
+```bash
+make down
 ```
 
-### 3. 安装依赖
-```bash
-# 安装核心依赖
-pip install -r requirements-clean.txt
+## 📁 项目结构
+
+```
+fastapi-web/
+├── app/                    # 应用源代码
+│   ├── routers/            # API 路由
+│   ├── config.py           # 应用配置
+│   ├── database.py         # 数据库连接
+│   ├── models.py           # 数据模型
+│   ├── schemas.py          # 数据验证
+│   ├── security.py         # 安全认证
+│   ├── redis_client.py     # Redis 客户端
+│   ├── middleware.py       # 中间件
+│   ├── exceptions.py       # 异常处理
+│   ├── crud.py             # 数据库操作
+│   ├── factory.py          # 应用工厂
+│   └── main.py             # 应用入口
+│
+├── docs/                   # 文档
+│   ├── DOCKER_SETUP.md     # Docker 部署指南
+│   └── DOCKER_QUICK_START.md # Docker 快速参考
+│
+├── config/                 # 配置文件
+│   ├── .env.example        # 环境变量示例
+│   ├── .env.docker         # Docker 环境变量
+│   └── nginx.conf          # Nginx 配置
+│
+├── scripts/                # 脚本文件
+├── logs/                   # 日志目录
+├── backups/                # 备份目录
+├── ssl/                    # SSL 证书目录
+│
+├── Dockerfile              # Docker 镜像构建
+├── docker compose.yml      # Docker Compose 配置
+├── docker-start.sh         # Docker 启动脚本（Linux/macOS）
+├── docker-start.bat        # Docker 启动脚本（Windows）
+├── Makefile                # Make 命令
+├── QUICK_REFERENCE.md      # 快速参考卡片
+├── requirements.txt        # Python 依赖
+└── .gitignore              # Git 忽略文件
 ```
 
-### 4. 运行项目
+## 🔧 常用命令
+
 ```bash
-python -m app.main
+# 启动/停止
+make up              # 启动所有服务
+make down            # 停止所有服务
+make restart         # 重启所有服务
+
+# 查看状态
+make ps              # 查看容器状态
+make health          # 检查服务健康状态
+make logs            # 查看实时日志
+
+# 容器操作
+make shell           # 进入应用容器
+make db              # 进入数据库容器
+make redis           # 进入 Redis 容器
+
+# 数据库操作
+make backup          # 备份数据库
+make restore FILE=backups/xxx.sql  # 恢复数据库
+
+# 其他
+make build           # 重新构建镜像
+make clean           # 清理容器和卷
+make help            # 查看所有命令
 ```
 
-## 方法二：使用 environment.yml 文件
-```bash
-# 创建环境
-conda env create -f environment.yml
+## 🌐 服务访问
 
-# 激活环境
-conda activate fastapi-web
+| 服务 | 地址 | 说明 |
+|------|------|------|
+| FastAPI 应用 | http://localhost:8080 | 主应用 |
+| API 文档 | http://localhost:8080/docs | Swagger UI |
+| Nginx 代理 | http://localhost:80 | 反向代理 |
+| MySQL | localhost:3306 | 数据库 |
+| Redis | localhost:6379 | 缓存 |
 
-# 初始化数据库
-./scripts/init_mysql.sh
+## 📋 数据库连接信息
 
-# 运行项目
-python -m app.main
+### MySQL
+```
+主机: localhost
+端口: 3306
+用户名: root
+密码: password
+数据库: fastapi_web
 ```
 
-## 方法三：使用 SQLite（简单测试）
-```bash
-# 修改 .env 文件中的数据库配置
-# DATABASE_URL=sqlite:///./app.db
-
-# 运行项目
-python -m app.main
+### Redis
+```
+主机: localhost
+端口: 6379
+数据库: 0
 ```
 
-## 其他运行方式
+## 🔐 环境配置
+
+### 本地开发
+
 ```bash
-# 使用 run.sh 脚本
-./run.sh
+# 复制环境变量示例
+cp .env.example .env
 
-# 使用 PM2 部署（生产环境）
-./scripts/startup.sh
+# 编辑环境变量
+vim .env
 
-# 停止 PM2 服务
-./scripts/shutdown.sh
+# 重启应用使配置生效
+make restart
 ```
 
-## 📊 API 文档
-- Swagger UI: http://localhost:8080/docs
-- ReDoc: http://localhost:8080/redoc
-- 健康检查: http://localhost:8080/health
+### Docker 环境
 
-## 🔧 数据库配置
+Docker Compose 会自动使用 `config/.env.docker`
 
-### MySQL 配置
+## 📦 依赖管理
+
+### 主要依赖
+
+- **FastAPI** - Web 框架
+- **SQLAlchemy** - ORM
+- **Pydantic** - 数据验证
+- **Redis** - 缓存
+- **PyMySQL** - MySQL 驱动
+- **python-jose** - JWT 认证
+- **passlib** - 密码加密
+
+### 更新依赖
+
 ```bash
-# .env 文件中的配置
-DATABASE_URL=mysql+pymysql://root:password@localhost:3306/fastapi_web
+# 查看过期的包
+pip list --outdated
+
+# 更新所有包
+pip install --upgrade -r requirements.txt
 ```
 
-### 主要配置项
-- `DATABASE_URL`: 数据库连接字符串
-- `PORT`: 服务端口（默认8080）
-- `APP_ENV`: 应用环境（development/production）
+## 🐛 故障排查
 
-## 🗄️ 数据库管理
+### 应用无法启动
 
-### MySQL 操作
 ```bash
-# 连接数据库
-mysql -u root -p
+# 查看详细日志
+docker compose logs app
 
-# 查看数据库
-SHOW DATABASES;
-
-# 使用数据库
-USE fastapi_web;
-
-# 查看表结构
-DESCRIBE items;
-
-# 查看数据
-SELECT * FROM items;
+# 检查依赖
+docker compose exec app pip list
 ```
 
-## 🐍 Conda 环境管理
+### 数据库连接失败
+
 ```bash
-# 查看所有环境
-conda env list
+# 检查 MySQL 服务
+docker compose ps mysql
 
-# 删除环境
-conda env remove -n fastapi-web
-
-# 导出环境
-conda env export > environment.yml
-
-# 更新环境
-conda env update -f environment.yml
+# 测试连接
+docker compose exec mysql mysql -uroot -ppassword -e "SELECT 1"
 ```
 
-## 🔧 API 功能
+### Redis 连接失败
 
-### 商品管理 API
-- `GET /items/` - 获取商品列表（支持分页）
-- `GET /items/search` - 搜索商品
-- `GET /items/{id}` - 获取单个商品
-- `POST /items/` - 创建商品
-- `PUT /items/{id}` - 更新商品
-- `DELETE /items/{id}` - 删除商品
-
-### 示例请求
 ```bash
-# 创建商品
-curl -X POST "http://localhost:8080/items/" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "测试商品",
-    "price": 99.99,
-    "is_offer": true,
-    "description": "这是一个测试商品"
-  }'
+# 检查 Redis 服务
+docker compose ps redis
 
-# 获取商品列表
-curl "http://localhost:8080/items/?skip=0&limit=10"
+# 测试连接
+docker compose exec redis redis-cli ping
+```
 
-# 搜索商品
-curl "http://localhost:8080/items/search?keyword=测试"
-``` 
+## 📚 文档
 
+- **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - 常用命令速查表
+- **[docs/DOCKER_SETUP.md](docs/DOCKER_SETUP.md)** - Docker 部署完整指南
+- **[docs/DOCKER_QUICK_START.md](docs/DOCKER_QUICK_START.md)** - Docker 快速参考
+- **[readme.md](readme.md)** - 项目原始文档
+
+## 🚢 部署
+
+### Docker 部署
+
+```bash
+# 构建镜像
+docker compose build
+
+# 启动服务
+docker compose up -d
+
+# 查看状态
+docker compose ps
+```
+
+### 生产环境检查清单
+
+- [ ] 修改所有默认密码
+- [ ] 配置 SSL 证书
+- [ ] 启用 HTTPS
+- [ ] 配置备份策略
+- [ ] 设置监控告警
+- [ ] 配置日志收集
+- [ ] 性能优化
+
+## 📞 获取帮助
+
+- 查看 **QUICK_REFERENCE.md** 中的常见问题
+- 查看 **docs/DOCKER_SETUP.md** 中的故障排查
+- 查看 **docs/DOCKER_QUICK_START.md** 中的快速参考
+
+## 📚 相关资源
+
+- [FastAPI 官方文档](https://fastapi.tiangolo.com/)
+- [Docker 官方文档](https://docs.docker.com/)
+- [Docker Compose 文档](https://docs.docker.com/compose/)
+- [SQLAlchemy 文档](https://docs.sqlalchemy.org/)
+- [Pydantic 文档](https://docs.pydantic.dev/)
+
+## 📄 许可证
+
+MIT License

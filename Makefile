@@ -24,49 +24,49 @@ help: ## 显示帮助信息
 
 up: ## 启动所有服务
 	@echo "$(BLUE)[INFO]$(NC) 启动 FastAPI Web 服务..."
-	@docker-compose up -d
+	@docker compose up -d
 	@sleep 2
 	@echo "$(GREEN)[SUCCESS]$(NC) 服务已启动"
 	@make health
 
 up-build: ## 重新构建并启动服务
 	@echo "$(BLUE)[INFO]$(NC) 重新构建镜像并启动..."
-	@docker-compose up -d --build
+	@docker compose up -d --build
 	@sleep 2
 	@echo "$(GREEN)[SUCCESS]$(NC) 服务已启动"
 	@make health
 
 up-foreground: ## 前台启动服务（显示日志）
 	@echo "$(BLUE)[INFO]$(NC) 前台启动服务..."
-	@docker-compose up
+	@docker compose up
 
 down: ## 停止所有服务
 	@echo "$(BLUE)[INFO]$(NC) 停止 FastAPI Web 服务..."
-	@docker-compose down
+	@docker compose down
 	@echo "$(GREEN)[SUCCESS]$(NC) 服务已停止"
 
 restart: ## 重启所有服务
 	@echo "$(BLUE)[INFO]$(NC) 重启 FastAPI Web 服务..."
-	@docker-compose restart
+	@docker compose restart
 	@sleep 2
 	@echo "$(GREEN)[SUCCESS]$(NC) 服务已重启"
 	@make health
 
 logs: ## 查看实时日志
-	@docker-compose logs -f
+	@docker compose logs -f
 
 logs-app: ## 查看应用日志
-	@docker-compose logs -f app
+	@docker compose logs -f app
 
 logs-mysql: ## 查看 MySQL 日志
-	@docker-compose logs -f mysql
+	@docker compose logs -f mysql
 
 logs-redis: ## 查看 Redis 日志
-	@docker-compose logs -f redis
+	@docker compose logs -f redis
 
 build: ## 构建 Docker 镜像
 	@echo "$(BLUE)[INFO]$(NC) 构建 Docker 镜像..."
-	@docker-compose build
+	@docker compose build
 	@echo "$(GREEN)[SUCCESS]$(NC) 镜像构建完成"
 
 clean: ## 清理容器和卷（谨慎操作）
@@ -75,7 +75,7 @@ clean: ## 清理容器和卷（谨慎操作）
 	echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
 		echo "$(BLUE)[INFO]$(NC) 清理资源..."; \
-		docker-compose down -v; \
+		docker compose down -v; \
 		echo "$(GREEN)[SUCCESS]$(NC) 资源已清理"; \
 	else \
 		echo "$(BLUE)[INFO]$(NC) 已取消"; \
@@ -83,7 +83,7 @@ clean: ## 清理容器和卷（谨慎操作）
 
 status: ## 查看服务状态
 	@echo "$(BLUE)服务状态:$(NC)"
-	@docker-compose ps
+	@docker compose ps
 
 health: ## 检查服务健康状态
 	@echo "$(BLUE)[INFO]$(NC) 检查服务健康状态..."
@@ -92,31 +92,31 @@ health: ## 检查服务健康状态
 	@curl -s http://localhost:8080/health || echo "$(RED)✗ 未响应$(NC)"
 	@echo ""
 	@echo "$(BLUE)MySQL 数据库:$(NC)"
-	@docker-compose exec -T mysql mysqladmin ping -h localhost 2>/dev/null && echo "$(GREEN)✓ 正常$(NC)" || echo "$(RED)✗ 未响应$(NC)"
+	@docker compose exec -T mysql mysqladmin ping -h localhost 2>/dev/null && echo "$(GREEN)✓ 正常$(NC)" || echo "$(RED)✗ 未响应$(NC)"
 	@echo ""
 	@echo "$(BLUE)Redis 缓存:$(NC)"
-	@docker-compose exec -T redis redis-cli ping 2>/dev/null && echo "$(GREEN)✓ 正常$(NC)" || echo "$(RED)✗ 未响应$(NC)"
+	@docker compose exec -T redis redis-cli ping 2>/dev/null && echo "$(GREEN)✓ 正常$(NC)" || echo "$(RED)✗ 未响应$(NC)"
 	@echo ""
 
 shell: ## 进入应用容器
-	@docker-compose exec app bash
+	@docker compose exec app bash
 
 db: ## 进入 MySQL 容器
-	@docker-compose exec mysql bash
+	@docker compose exec mysql bash
 
 redis: ## 进入 Redis 容器
-	@docker-compose exec redis sh
+	@docker compose exec redis sh
 
 mysql-cli: ## 进入 MySQL 命令行
-	@docker-compose exec mysql mysql -uroot -ppassword fastapi_web
+	@docker compose exec mysql mysql -uroot -ppassword fastapi_web
 
 redis-cli: ## 进入 Redis 命令行
-	@docker-compose exec redis redis-cli
+	@docker compose exec redis redis-cli
 
 backup: ## 备份数据库
 	@mkdir -p backups
 	@echo "$(BLUE)[INFO]$(NC) 备份数据库..."
-	@docker-compose exec -T mysql mysqldump -uroot -ppassword fastapi_web > backups/mysql_backup_$$(date +%Y%m%d_%H%M%S).sql
+	@docker compose exec -T mysql mysqldump -uroot -ppassword fastapi_web > backups/mysql_backup_$$(date +%Y%m%d_%H%M%S).sql
 	@echo "$(GREEN)[SUCCESS]$(NC) 数据库备份完成"
 
 restore: ## 恢复数据库（使用: make restore FILE=backups/mysql_backup_xxx.sql）
@@ -133,7 +133,7 @@ restore: ## 恢复数据库（使用: make restore FILE=backups/mysql_backup_xxx
 	echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
 		echo "$(BLUE)[INFO]$(NC) 恢复数据库..."; \
-		docker-compose exec -T mysql mysql -uroot -ppassword fastapi_web < $(FILE); \
+		docker compose exec -T mysql mysql -uroot -ppassword fastapi_web < $(FILE); \
 		echo "$(GREEN)[SUCCESS]$(NC) 数据库恢复完成"; \
 	else \
 		echo "$(BLUE)[INFO]$(NC) 已取消"; \
@@ -148,7 +148,7 @@ version: ## 显示版本信息
 	@echo "$(BLUE)Docker 版本:$(NC)"
 	@docker --version
 	@echo "$(BLUE)Docker Compose 版本:$(NC)"
-	@docker-compose --version
+	@docker compose --version
 
 info: ## 显示服务信息
 	@echo ""

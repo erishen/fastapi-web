@@ -18,7 +18,7 @@ MODE="up"
 DETACH="-d"
 BUILD=""
 ENV_FILE=".env.docker"
-COMPOSE_FILE="docker-compose.yml"
+COMPOSE_FILE="docker compose.yml"
 
 # 帮助信息
 show_help() {
@@ -82,7 +82,7 @@ check_docker() {
         exit 1
     fi
     
-    if ! command -v docker-compose &> /dev/null; then
+    if ! command -v docker compose &> /dev/null; then
         print_error "Docker Compose 未安装，请先安装 Docker Compose"
         exit 1
     fi
@@ -115,32 +115,32 @@ start_services() {
     
     if [ -n "$BUILD" ]; then
         print_info "重新构建镜像..."
-        docker-compose -f "$COMPOSE_FILE" build
+        docker compose -f "$COMPOSE_FILE" build
     fi
     
     if [ "$DETACH" = "-d" ]; then
         print_info "后台启动服务..."
-        docker-compose -f "$COMPOSE_FILE" up $DETACH
+        docker compose -f "$COMPOSE_FILE" up $DETACH
         sleep 3
         print_success "服务已启动"
         show_service_info
     else
         print_info "前台启动服务..."
-        docker-compose -f "$COMPOSE_FILE" up
+        docker compose -f "$COMPOSE_FILE" up
     fi
 }
 
 # 停止服务
 stop_services() {
     print_info "停止 FastAPI Web 服务..."
-    docker-compose -f "$COMPOSE_FILE" down
+    docker compose -f "$COMPOSE_FILE" down
     print_success "服务已停止"
 }
 
 # 重启服务
 restart_services() {
     print_info "重启 FastAPI Web 服务..."
-    docker-compose -f "$COMPOSE_FILE" restart
+    docker compose -f "$COMPOSE_FILE" restart
     sleep 2
     print_success "服务已重启"
     show_service_info
@@ -153,17 +153,17 @@ view_logs() {
     
     if [ -z "$service" ]; then
         print_info "查看所有服务日志..."
-        docker-compose -f "$COMPOSE_FILE" logs $follow
+        docker compose -f "$COMPOSE_FILE" logs $follow
     else
         print_info "查看 $service 服务日志..."
-        docker-compose -f "$COMPOSE_FILE" logs $follow "$service"
+        docker compose -f "$COMPOSE_FILE" logs $follow "$service"
     fi
 }
 
 # 构建镜像
 build_images() {
     print_info "构建 Docker 镜像..."
-    docker-compose -f "$COMPOSE_FILE" build
+    docker compose -f "$COMPOSE_FILE" build
     print_success "镜像构建完成"
 }
 
@@ -174,7 +174,7 @@ clean_resources() {
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         print_info "清理资源..."
-        docker-compose -f "$COMPOSE_FILE" down -v
+        docker compose -f "$COMPOSE_FILE" down -v
         print_success "资源已清理"
     else
         print_info "已取消"
@@ -184,25 +184,25 @@ clean_resources() {
 # 查看服务状态
 show_status() {
     print_info "服务状态："
-    docker-compose -f "$COMPOSE_FILE" ps
+    docker compose -f "$COMPOSE_FILE" ps
 }
 
 # 进入应用容器
 enter_app_shell() {
     print_info "进入应用容器..."
-    docker-compose -f "$COMPOSE_FILE" exec app bash
+    docker compose -f "$COMPOSE_FILE" exec app bash
 }
 
 # 进入数据库容器
 enter_db_shell() {
     print_info "进入数据库容器..."
-    docker-compose -f "$COMPOSE_FILE" exec mysql bash
+    docker compose -f "$COMPOSE_FILE" exec mysql bash
 }
 
 # 进入 Redis 容器
 enter_redis_shell() {
     print_info "进入 Redis 容器..."
-    docker-compose -f "$COMPOSE_FILE" exec redis sh
+    docker compose -f "$COMPOSE_FILE" exec redis sh
 }
 
 # 显示服务信息
@@ -243,7 +243,7 @@ backup_database() {
     mkdir -p "$backup_dir"
     
     print_info "备份数据库到 $backup_file..."
-    docker-compose -f "$COMPOSE_FILE" exec -T mysql mysqldump \
+    docker compose -f "$COMPOSE_FILE" exec -T mysql mysqldump \
         -uroot -ppassword fastapi_web > "$backup_file"
     
     print_success "数据库备份完成: $backup_file"
@@ -269,7 +269,7 @@ restore_database() {
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         print_info "恢复数据库..."
-        docker-compose -f "$COMPOSE_FILE" exec -T mysql mysql \
+        docker compose -f "$COMPOSE_FILE" exec -T mysql mysql \
             -uroot -ppassword fastapi_web < "$backup_file"
         print_success "数据库恢复完成"
     else

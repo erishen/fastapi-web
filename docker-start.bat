@@ -19,7 +19,7 @@ set "MODE=up"
 set "DETACH=-d"
 set "BUILD="
 set "ENV_FILE=.env.docker"
-set "COMPOSE_FILE=docker-compose.yml"
+set "COMPOSE_FILE=docker compose.yml"
 
 REM 解析命令
 if "%1"=="" (
@@ -147,7 +147,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
-where docker-compose >nul 2>nul
+where docker compose >nul 2>nul
 if errorlevel 1 (
     echo %RED%[ERROR]%NC% Docker Compose 未安装，请先安装 Docker Compose
     exit /b 1
@@ -167,30 +167,30 @@ echo %BLUE%[INFO]%NC% 启动 FastAPI Web 服务...
 
 if defined BUILD (
     echo %BLUE%[INFO]%NC% 重新构建镜像...
-    docker-compose -f "%COMPOSE_FILE%" build
+    docker compose -f "%COMPOSE_FILE%" build
 )
 
 if "%DETACH%"=="-d" (
     echo %BLUE%[INFO]%NC% 后台启动服务...
-    docker-compose -f "%COMPOSE_FILE%" up %DETACH%
+    docker compose -f "%COMPOSE_FILE%" up %DETACH%
     timeout /t 3 /nobreak
     echo %GREEN%[SUCCESS]%NC% 服务已启动
     call :show_service_info
 ) else (
     echo %BLUE%[INFO]%NC% 前台启动服务...
-    docker-compose -f "%COMPOSE_FILE%" up
+    docker compose -f "%COMPOSE_FILE%" up
 )
 exit /b 0
 
 :stop_services
 echo %BLUE%[INFO]%NC% 停止 FastAPI Web 服务...
-docker-compose -f "%COMPOSE_FILE%" down
+docker compose -f "%COMPOSE_FILE%" down
 echo %GREEN%[SUCCESS]%NC% 服务已停止
 exit /b 0
 
 :restart_services
 echo %BLUE%[INFO]%NC% 重启 FastAPI Web 服务...
-docker-compose -f "%COMPOSE_FILE%" restart
+docker compose -f "%COMPOSE_FILE%" restart
 timeout /t 2 /nobreak
 echo %GREEN%[SUCCESS]%NC% 服务已重启
 call :show_service_info
@@ -198,12 +198,12 @@ exit /b 0
 
 :view_logs
 echo %BLUE%[INFO]%NC% 查看服务日志...
-docker-compose -f "%COMPOSE_FILE%" logs -f
+docker compose -f "%COMPOSE_FILE%" logs -f
 exit /b 0
 
 :build_images
 echo %BLUE%[INFO]%NC% 构建 Docker 镜像...
-docker-compose -f "%COMPOSE_FILE%" build
+docker compose -f "%COMPOSE_FILE%" build
 echo %GREEN%[SUCCESS]%NC% 镜像构建完成
 exit /b 0
 
@@ -212,7 +212,7 @@ echo %YELLOW%[WARNING]%NC% 即将删除所有容器和卷，此操作不可恢�
 set /p confirm="确认删除？(y/N): "
 if /i "%confirm%"=="y" (
     echo %BLUE%[INFO]%NC% 清理资源...
-    docker-compose -f "%COMPOSE_FILE%" down -v
+    docker compose -f "%COMPOSE_FILE%" down -v
     echo %GREEN%[SUCCESS]%NC% 资源已清理
 ) else (
     echo %BLUE%[INFO]%NC% 已取消
@@ -221,22 +221,22 @@ exit /b 0
 
 :show_status
 echo %BLUE%服务状态:%NC%
-docker-compose -f "%COMPOSE_FILE%" ps
+docker compose -f "%COMPOSE_FILE%" ps
 exit /b 0
 
 :enter_app_shell
 echo %BLUE%[INFO]%NC% 进入应用容器...
-docker-compose -f "%COMPOSE_FILE%" exec app bash
+docker compose -f "%COMPOSE_FILE%" exec app bash
 exit /b 0
 
 :enter_db_shell
 echo %BLUE%[INFO]%NC% 进入数据库容器...
-docker-compose -f "%COMPOSE_FILE%" exec mysql bash
+docker compose -f "%COMPOSE_FILE%" exec mysql bash
 exit /b 0
 
 :enter_redis_shell
 echo %BLUE%[INFO]%NC% 进入 Redis 容器...
-docker-compose -f "%COMPOSE_FILE%" exec redis sh
+docker compose -f "%COMPOSE_FILE%" exec redis sh
 exit /b 0
 
 :show_service_info
@@ -272,7 +272,7 @@ echo %BLUE%[INFO]%NC% 备份数据库...
 if not exist "backups" mkdir backups
 for /f "tokens=2-4 delims=/ " %%a in ('date /t') do (set mydate=%%c%%a%%b)
 for /f "tokens=1-2 delims=/:" %%a in ('time /t') do (set mytime=%%a%%b)
-docker-compose -f "%COMPOSE_FILE%" exec -T mysql mysqldump -uroot -ppassword fastapi_web > backups\mysql_backup_%mydate%_%mytime%.sql
+docker compose -f "%COMPOSE_FILE%" exec -T mysql mysqldump -uroot -ppassword fastapi_web > backups\mysql_backup_%mydate%_%mytime%.sql
 echo %GREEN%[SUCCESS]%NC% 数据库备份完成
 exit /b 0
 
@@ -292,7 +292,7 @@ echo %YELLOW%[WARNING]%NC% 即将恢复数据库，此操作将覆盖现有数�
 set /p confirm="确认恢复？(y/N): "
 if /i "%confirm%"=="y" (
     echo %BLUE%[INFO]%NC% 恢复数据库...
-    docker-compose -f "%COMPOSE_FILE%" exec -T mysql mysql -uroot -ppassword fastapi_web < "%1"
+    docker compose -f "%COMPOSE_FILE%" exec -T mysql mysql -uroot -ppassword fastapi_web < "%1"
     echo %GREEN%[SUCCESS]%NC% 数据库恢复完成
 ) else (
     echo %BLUE%[INFO]%NC% 已取消
