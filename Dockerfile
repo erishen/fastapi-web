@@ -1,4 +1,5 @@
-FROM registry.aliyuncs.com/library/python:3.11
+ARG REGISTRY_MIRROR=docker.io
+FROM ${REGISTRY_MIRROR}/library/python:3.11
 
 WORKDIR /app
 

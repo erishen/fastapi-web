@@ -4,6 +4,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        REGISTRY_MIRROR: ${REGISTRY_MIRROR:-docker.io}
     container_name: fastapi-web-app
     ports:
       - "8080:8080"
