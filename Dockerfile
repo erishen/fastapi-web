@@ -1,5 +1,5 @@
 ARG REGISTRY_MIRROR=docker.io
-FROM ${REGISTRY_MIRROR}/library/python:3.11
+FROM ${REGISTRY_MIRROR}/python:3.11
 
 WORKDIR /app
 
