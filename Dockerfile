@@ -2,6 +2,9 @@ FROM python:3.10
 
 WORKDIR /app
 
+# 构建参数
+ARG PORT=8080
+
 # 安装系统依赖
 RUN apt-get update && apt-get install -y \
     gcc \
@@ -20,12 +23,20 @@ COPY . .
 # 创建日志目录
 RUN mkdir -p logs
 
+# 复制并设置启动脚本权限
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+# 复制并设置健康检查脚本权限
+COPY healthcheck.sh /app/healthcheck.sh
+RUN chmod +x /app/healthcheck.sh
+
 # 暴露端口
-EXPOSE 8080
+EXPOSE ${PORT}
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
+    CMD curl -f http://localhost:${PORT}/health || exit 1
 
 # 启动应用
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+ENTRYPOINT ["/app/entrypoint.sh"]

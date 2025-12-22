@@ -4,19 +4,26 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - PORT=${PORT:-8080}
     container_name: fastapi-web-app
     ports:
-      - "8080:8080"
+      - "${EXPOSE_PORT:-8080}:${PORT:-8080}"
     environment:
       - APP_ENV=production
       - DEBUG=false
-      - PORT=8080
+      - PORT=${PORT:-8080}
       - HOST=0.0.0.0
-      - DATABASE_URL=mysql+pymysql://root:password@mysql:3306/fastapi_web
-      - REDIS_URL=redis://redis:6379/0
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_USER=${MYSQL_USER:-root}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-password}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-fastapi_web}
+      - DATABASE_URL=mysql+pymysql://${MYSQL_USER:-root}:${MYSQL_PASSWORD:-password}@mysql:${MYSQL_PORT:-3306}/${MYSQL_DATABASE:-fastapi_web}
       - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_DB=0
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_DB=${REDIS_DB:-0}
+      - REDIS_URL=redis://redis:${REDIS_PORT:-6379}/${REDIS_DB:-0}
       - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-this-in-production}
       - LOG_LEVEL=info
     depends_on:
@@ -31,7 +38,7 @@ services:
       - fastapi-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD", "/bin/bash", "/app/healthcheck.sh"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -42,13 +49,13 @@ services:
     image: mysql:8.0
     container_name: fastapi-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: fastapi_web
-      MYSQL_USER: fastapi_user
-      MYSQL_PASSWORD: fastapi_password
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD:-password}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-fastapi_web}
+      MYSQL_USER: ${MYSQL_USER:-fastapi_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-fastapi_password}
       TZ: 'Asia/Shanghai'
     ports:
-      - "3306:3306"
+      - "${MYSQL_EXPOSE_PORT:-3306}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./scripts/init_mysql.sh:/docker-entrypoint-initdb.d/init.sh
@@ -67,7 +74,7 @@ services:
     container_name: fastapi-redis
     command: redis-server --appendonly yes
     ports:
-      - "6379:6379"
+      - "${REDIS_EXPOSE_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     networks:
