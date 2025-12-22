@@ -1,6 +1,10 @@
-FROM python:3.11
+FROM registry.aliyuncs.com/library/python:3.11
 
 WORKDIR /app
+
+# 设置阿里云加速器
+ENV PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
+ENV PIP_TRUSTED_HOST=mirrors.aliyun.com
 
 # 安装系统依赖
 RUN apt-get update && apt-get install -y \
