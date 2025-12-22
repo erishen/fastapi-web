@@ -63,7 +63,7 @@ services:
 
   # Redis 缓存
   redis:
-    image: redis:7-alpine
+    image: redis:6-alpine
     container_name: fastapi-redis
     command: redis-server --appendonly yes
     ports:
