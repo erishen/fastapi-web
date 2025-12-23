@@ -19,11 +19,11 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./app.db"
     
     # Redis 配置
-    redis_url: str = "redis://localhost:6379/0"
-    redis_host: str = "localhost"
-    redis_port: int = 6379
-    redis_db: int = 0
-    redis_password: Optional[str] = None
+    redis_url: str = os.getenv('REDIS_URL', 'redis://:redispassword@localhost:6380/0')
+    redis_host: str = os.getenv('REDIS_HOST', 'localhost')
+    redis_port: int = int(os.getenv('REDIS_PORT', '6380'))
+    redis_db: int = int(os.getenv('REDIS_DB', '0'))
+    redis_password: str = os.getenv('REDIS_PASSWORD', 'redispassword')
     
     # API 文档配置
     docs_url: str = "/docs"

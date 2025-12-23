@@ -51,8 +51,8 @@ make info           # 显示服务信息
 ## 数据库连接
 
 ```
-MySQL:  localhost:3306 (root/password)
-Redis:  localhost:6379
+MySQL:  localhost:3307 (root/password)
+Redis:  localhost:6380 (密码: redispassword)
 ```
 
 ## 常见问题

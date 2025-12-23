@@ -251,13 +251,13 @@ echo   API 文档:     http://localhost:8080/docs
 echo   Nginx 代理:   http://localhost:80
 echo.
 echo %BLUE%数据库连接:%NC%
-echo   MySQL:  localhost:3306
+echo   MySQL:  localhost:3307
 echo   用户名: root
 echo   密码:   password
 echo   数据库: fastapi_web
 echo.
 echo %BLUE%Redis 连接:%NC%
-echo   地址: localhost:6379
+echo   地址: localhost:6380 (密码: redispassword)
 echo.
 echo %BLUE%常用命令:%NC%
 echo   查看日志:     %0 logs

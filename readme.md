@@ -105,15 +105,15 @@ make help            # 查看所有命令
 | FastAPI 应用 | http://localhost:8080 | 主应用 |
 | API 文档 | http://localhost:8080/docs | Swagger UI |
 | Nginx 代理 | http://localhost:80 | 反向代理 |
-| MySQL | localhost:3306 | 数据库 |
-| Redis | localhost:6379 | 缓存 |
+| MySQL | localhost:3307 | 数据库 |
+| Redis | localhost:6380 | 缓存 |
 
 ## 📋 数据库连接信息
 
 ### MySQL
 ```
 主机: localhost
-端口: 3306
+端口: 3307
 用户名: root
 密码: password
 数据库: fastapi_web
@@ -122,7 +122,8 @@ make help            # 查看所有命令
 ### Redis
 ```
 主机: localhost
-端口: 6379
+端口: 6380
+密码: redispassword
 数据库: 0
 ```
 
@@ -131,8 +132,28 @@ make help            # 查看所有命令
 ### 本地开发
 
 ```bash
-# 复制环境变量示例
-cp .env.example .env
+# 创建环境变量文件
+cat > .env << EOF
+# 应用配置
+EXPOSE_PORT=8080
+SECRET_KEY=your-secret-key-change-this-in-production
+LOG_LEVEL=info
+DEBUG=true
+
+# MySQL 数据库配置 (本地)
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_USER=root
+MYSQL_PASSWORD=password
+MYSQL_DATABASE=fastapi_web
+
+# Redis 缓存配置 (本地)
+REDIS_HOST=localhost
+REDIS_PORT=6380
+REDIS_PASSWORD=redispassword
+REDIS_DB=0
+REDIS_URL=redis://:redispassword@localhost:6380/0
+EOF
 
 # 编辑环境变量
 vim .env

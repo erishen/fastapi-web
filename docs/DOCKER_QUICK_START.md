@@ -107,8 +107,8 @@ docker compose exec redis sh
 | FastAPI 应用 | http://localhost:8080 | 主应用 |
 | API 文档 | http://localhost:8080/docs | Swagger UI |
 | Nginx 代理 | http://localhost:80 | 反向代理 |
-| MySQL | localhost:3306 | 数据库 |
-| Redis | localhost:6379 | 缓存 |
+| MySQL | localhost:3307 | 数据库 |
+| Redis | localhost:6380 | 缓存 |
 
 ---
 
@@ -117,7 +117,7 @@ docker compose exec redis sh
 ### MySQL
 ```
 主机: localhost
-端口: 3306
+端口: 3307
 用户名: root
 密码: password
 数据库: fastapi_web
@@ -126,7 +126,8 @@ docker compose exec redis sh
 ### Redis
 ```
 主机: localhost
-端口: 6379
+端口: 6380
+密码: redispassword
 数据库: 0
 ```
 
@@ -215,8 +216,8 @@ docker compose logs app
 
 # 检查端口是否被占用
 lsof -i :8080
-lsof -i :3306
-lsof -i :6379
+lsof -i :3307
+lsof -i :6380
 
 # 清理并重新启动
 make clean
@@ -258,6 +259,33 @@ curl http://localhost:8080/health
 # 查看应用日志
 docker compose logs -f app
 ```
+
+---
+
+## 环境变量配置
+
+### 创建环境配置文件
+
+```bash
+# 创建 .env.docker 文件
+cat > .env.docker << EOF
+# 应用配置
+EXPOSE_PORT=8080
+SECRET_KEY=your-secret-key-change-this-in-production
+LOG_LEVEL=info
+
+# MySQL 数据库配置
+MYSQL_PASSWORD=your-mysql-password
+MYSQL_EXPOSE_PORT=3307
+
+# Redis 缓存配置
+REDIS_PASSWORD=your-redis-password
+REDIS_EXPOSE_PORT=6380
+REDIS_URL=redis://:your-redis-password@redis:6379/0
+EOF
+```
+
+**注意**: Docker Compose 会自动读取 `.env.docker` 文件中的变量。
 
 ---
 

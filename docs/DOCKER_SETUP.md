@@ -17,8 +17,8 @@ fastapi-web/
 ## 服务组成
 
 - **FastAPI App**: 主应用服务 (端口 8080)
-- **MySQL**: 数据库服务 (端口 3306)
-- **Redis**: 缓存服务 (端口 6379)
+- **MySQL**: 数据库服务 (端口 3307)
+- **Redis**: 缓存服务 (端口 6380)
 - **Nginx**: 反向代理 (端口 80, 443)
 
 ## 快速开始
@@ -142,11 +142,28 @@ docker compose exec redis redis-cli
 编辑 `docker compose.yml` 中的 `environment` 部分或创建 `.env` 文件：
 
 ```bash
-# 创建 .env 文件
-cat > .env << EOF
+# 创建 .env.docker 文件
+cat > .env.docker << EOF
+# 应用配置
+EXPOSE_PORT=8080
 SECRET_KEY=your-production-secret-key
-MYSQL_ROOT_PASSWORD=your-mysql-password
+LOG_LEVEL=info
+
+# MySQL 数据库配置
+MYSQL_HOST=mysql
+MYSQL_PORT=3306
+MYSQL_USER=root
+MYSQL_PASSWORD=your-mysql-password
+MYSQL_DATABASE=fastapi_web
+MYSQL_EXPOSE_PORT=3307
+
+# Redis 缓存配置
+REDIS_HOST=redis
+REDIS_PORT=6379
 REDIS_PASSWORD=your-redis-password
+REDIS_DB=0
+REDIS_EXPOSE_PORT=6380
+REDIS_URL=redis://:your-redis-password@redis:6379/0
 EOF
 ```
 
@@ -169,10 +186,23 @@ EOF
    ```
 
 4. **配置 Redis 密码**
-   ```bash
-   # 修改 docker compose.yml
+   ```yaml
+   # 默认密码: redispassword
+   # 如需修改，在环境变量中设置 REDIS_PASSWORD
    redis:
-     command: redis-server --requirepass your-redis-password
+     environment:
+       REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
+     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redispassword}
+   ```
+
+   **连接示例：**
+   ```bash
+   # 使用密码连接
+   redis-cli -h localhost -p 6380 -a redispassword
+
+   # 或在 redis-cli 中认证
+   redis-cli -h localhost -p 6380
+   AUTH redispassword
    ```
 
 ## 性能优化
@@ -238,8 +268,8 @@ docker compose exec app bash
 ```bash
 # 查看占用的端口
 lsof -i :8080
-lsof -i :3306
-lsof -i :6379
+lsof -i :3307
+lsof -i :6380
 
 # 修改 docker compose.yml 中的端口映射
 # 例如: "8081:8080" 将容器的 8080 映射到主机的 8081
