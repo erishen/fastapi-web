@@ -6,8 +6,12 @@ from datetime import datetime, timedelta
 from typing import Optional
 from .config import settings
 
-# 密码加密
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# 密码加密 - 使用pbkdf2_sha256避免bcrypt问题
+pwd_context = CryptContext(
+    schemes=["pbkdf2_sha256"],
+    deprecated="auto",
+    pbkdf2_sha256__default_rounds=30000
+)
 
 # JWT 认证
 security = HTTPBearer()
@@ -16,12 +20,12 @@ security = HTTPBearer()
 fake_users_db = {
     "admin": {
         "username": "admin",
-        "hashed_password": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",  # secret
+        "hashed_password": "$pbkdf2-sha256$30000$vre2llIqxdg7JwQAoHTu3Q$Aaa0W44LwqeyT/eMdzD3k/ZBYbe7g.SAs5BSQKEQJcM",  # secret
         "role": "admin"
     },
     "user": {
-        "username": "user", 
-        "hashed_password": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",  # secret
+        "username": "user",
+        "hashed_password": "$pbkdf2-sha256$30000$k9IaQ.jdG4PQmvO.15oTAg$KBkXq5y3HYlOq7IE2aE1xOPpRlFd.sVc9nNjbVAmxH4",  # secret
         "role": "user"
     }
 }

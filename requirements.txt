@@ -27,7 +27,7 @@ orjson==3.10.5
 
 # 安全认证
 python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
+passlib[bcrypt]>=1.7.4
 
 # Redis 缓存
 redis==5.0.1
