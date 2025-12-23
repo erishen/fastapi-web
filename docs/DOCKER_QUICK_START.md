@@ -106,7 +106,6 @@ docker compose exec redis sh
 |------|------|------|
 | FastAPI 应用 | http://localhost:8080 | 主应用 |
 | API 文档 | http://localhost:8080/docs | Swagger UI |
-| Nginx 代理 | http://localhost:80 | 反向代理 |
 | MySQL | localhost:3307 | 数据库 |
 | Redis | localhost:6380 | 缓存 |
 
@@ -306,14 +305,6 @@ DB_MAX_OVERFLOW=40
 CACHE_EXPIRE_SECONDS=7200
 ```
 
-### 调整 Nginx 工作进程
-
-编辑 `nginx.conf`:
-```nginx
-worker_processes auto;
-worker_connections 2048;
-```
-
 ---
 
 ## 生产环境部署
@@ -329,9 +320,7 @@ environment:
 
 ### 2. 启用 HTTPS
 
-1. 获取 SSL 证书
-2. 将证书放在 `ssl/` 目录
-3. 取消注释 `nginx.conf` 中的 HTTPS 配置
+对于生产环境，建议使用反向代理（如 Nginx、Caddy 或 Traefik）来处理 HTTPS。
 
 ### 3. 配置备份
 

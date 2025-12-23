@@ -215,7 +215,6 @@ show_service_info() {
     echo -e "${BLUE}服务地址:${NC}"
     echo "  FastAPI 应用: http://localhost:8080"
     echo "  API 文档:     http://localhost:8080/docs"
-    echo "  Nginx 代理:   http://localhost:80"
     echo ""
     echo -e "${BLUE}数据库连接:${NC}"
     echo "  MySQL:  localhost:3307"

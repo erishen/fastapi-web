@@ -53,7 +53,6 @@ fastapi-web/
 ├── config/                 # 配置文件
 │   ├── .env.example        # 环境变量示例
 │   ├── .env.docker         # Docker 环境变量
-│   └── nginx.conf          # Nginx 配置
 │
 ├── scripts/                # 脚本文件
 ├── logs/                   # 日志目录
@@ -104,7 +103,6 @@ make help            # 查看所有命令
 |------|------|------|
 | FastAPI 应用 | http://localhost:8080 | 主应用 |
 | API 文档 | http://localhost:8080/docs | Swagger UI |
-| Nginx 代理 | http://localhost:80 | 反向代理 |
 | MySQL | localhost:3307 | 数据库 |
 | Redis | localhost:6380 | 缓存 |
 

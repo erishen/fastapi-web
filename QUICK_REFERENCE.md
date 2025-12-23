@@ -46,7 +46,6 @@ make info           # 显示服务信息
 
 - API 文档: http://localhost:8080/docs
 - 应用首页: http://localhost:8080
-- Nginx: http://localhost:80
 
 ## 数据库连接
 

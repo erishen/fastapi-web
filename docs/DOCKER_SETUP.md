@@ -7,7 +7,6 @@ fastapi-web/
 ├── docker compose.yml      # Docker Compose 配置
 ├── Dockerfile              # FastAPI 应用镜像
 ├── .dockerignore           # Docker 构建忽略文件
-├── nginx.conf              # Nginx 反向代理配置
 ├── .env.docker             # Docker 环境变量
 ├── app/                    # 应用源代码
 ├── scripts/                # 初始化脚本
@@ -19,7 +18,6 @@ fastapi-web/
 - **FastAPI App**: 主应用服务 (端口 8080)
 - **MySQL**: 数据库服务 (端口 3307)
 - **Redis**: 缓存服务 (端口 6380)
-- **Nginx**: 反向代理 (端口 80, 443)
 
 ## 快速开始
 
@@ -176,8 +174,7 @@ EOF
    ```
 
 2. **启用 HTTPS**
-   - 将 SSL 证书放在 `ssl/` 目录
-   - 取消注释 `nginx.conf` 中的 HTTPS 配置
+   使用外部反向代理（如 Nginx、Caddy 或 Traefik）处理 HTTPS
 
 3. **配置数据库密码**
    ```yaml
@@ -221,11 +218,17 @@ DB_MAX_OVERFLOW=20
 CACHE_EXPIRE_SECONDS=3600
 ```
 
-### 3. Nginx 缓存
+### 3. 应用层缓存
 
-编辑 `nginx.conf` 添加缓存配置：
-```nginx
-proxy_cache_path /var/cache/nginx levels=1:2 keys_zone=api_cache:10m;
+在 FastAPI 应用中配置缓存：
+```python
+# 使用 Redis 缓存装饰器
+from app.redis_client import cache_result
+
+@cache_result("api_response", expire=3600)
+async def get_data():
+    # 缓存 1 小时
+    pass
 ```
 
 ## 故障排查
