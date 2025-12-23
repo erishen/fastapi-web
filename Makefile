@@ -1,4 +1,4 @@
-.PHONY: help up down restart logs build clean status shell db redis backup restore health
+.PHONY: help up down restart logs build clean status shell db redis backup restore health autostart
 
 # 颜色定义 - 根据环境变量决定是否显示颜色
 NO_COLOR := $(shell echo $$NO_COLOR)
@@ -193,4 +193,25 @@ info: ## 显示服务信息
 	@echo "  make shell           # 进入应用容器"
 	@echo "  make health          # 检查服务健康状态"
 	@echo "  make down            # 停止所有服务"
+	@echo "  make autostart       # 设置系统自动启动"
 	@echo ""
+
+autostart: ## 设置系统自动启动
+	@echo "$(BLUE)[INFO]$(NC) 设置系统自动启动..."
+	@if [[ "$$OSTYPE" == "linux-gnu"* ]]; then \
+		echo "$(YELLOW)检测到 Linux 系统$(NC)"; \
+		if [[ $$EUID -eq 0 ]]; then \
+			./scripts/setup-autostart.sh; \
+		else \
+			echo "$(RED)需要 root 权限，请使用: sudo make autostart$(NC)"; \
+			exit 1; \
+		fi \
+	elif [[ "$$OSTYPE" == "darwin"* ]]; then \
+		echo "$(YELLOW)检测到 macOS 系统$(NC)"; \
+		./scripts/setup-autostart.sh; \
+	else \
+		echo "$(RED)不支持的操作系统$(NC)"; \
+		echo "请查看 AUTO_STARTUP_README.md 了解手动配置方法"; \
+		exit 1; \
+	fi
+	@echo "$(GREEN)[SUCCESS]$(NC) 自动启动设置完成"

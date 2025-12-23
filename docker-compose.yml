@@ -38,7 +38,7 @@ services:
       - ./logs:/app/logs
     networks:
       - fastapi-network
-    restart: unless-stopped
+    restart: always
     healthcheck:
       test: ["CMD", "/bin/bash", "/app/healthcheck.sh"]
       interval: 30s
@@ -65,7 +65,7 @@ services:
       - ./scripts/init_mysql.sh:/docker-entrypoint-initdb.d/init.sh
     networks:
       - fastapi-network
-    restart: unless-stopped
+    restart: always
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
@@ -85,7 +85,7 @@ services:
       - redis_data:/data
     networks:
       - fastapi-network
-    restart: unless-stopped
+    restart: always
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redispassword}", "ping"]
       interval: 10s
