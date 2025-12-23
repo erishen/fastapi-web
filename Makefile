@@ -95,7 +95,7 @@ health: ## 检查服务健康状态
 	@docker compose exec -T mysql mysqladmin ping -h localhost 2>/dev/null && echo "$(GREEN)✓ 正常$(NC)" || echo "$(RED)✗ 未响应$(NC)"
 	@echo ""
 	@echo "$(BLUE)Redis 缓存:$(NC)"
-	@docker compose exec -T redis redis-cli ping 2>/dev/null && echo "$(GREEN)✓ 正常$(NC)" || echo "$(RED)✗ 未响应$(NC)"
+	@docker compose exec -T redis sh -c 'redis-cli -a "$$REDIS_PASSWORD" ping 2>/dev/null' && echo "$(GREEN)✓ 正常$(NC)" || echo "$(RED)✗ 未响应$(NC)"
 	@echo ""
 
 shell: ## 进入应用容器
