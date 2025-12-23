@@ -1,11 +1,29 @@
 .PHONY: help up down restart logs build clean status shell db redis backup restore health
 
-# 颜色定义
-BLUE := \033[0;34m
-GREEN := \033[0;32m
-YELLOW := \033[1;33m
-RED := \033[0;31m
-NC := \033[0m # No Color
+# 颜色定义 - 根据环境变量决定是否显示颜色
+NO_COLOR := $(shell echo $$NO_COLOR)
+FORCE_COLOR := $(shell echo $$FORCE_COLOR)
+
+ifeq ($(NO_COLOR),1)
+    BLUE :=
+    GREEN :=
+    YELLOW :=
+    RED :=
+    NC :=
+else ifeq ($(FORCE_COLOR),1)
+    BLUE := \033[0;34m
+    GREEN := \033[0;32m
+    YELLOW := \033[1;33m
+    RED := \033[0;31m
+    NC := \033[0m # No Color
+else
+    # 默认启用颜色（macOS 友好）
+    BLUE := \033[0;34m
+    GREEN := \033[0;32m
+    YELLOW := \033[1;33m
+    RED := \033[0;31m
+    NC := \033[0m # No Color
+endif
 
 # 默认目标
 .DEFAULT_GOAL := help
