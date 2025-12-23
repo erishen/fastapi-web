@@ -16,10 +16,11 @@ services:
       - HOST=0.0.0.0
       - MYSQL_HOST=mysql
       - MYSQL_PORT=${MYSQL_PORT:-3306}
-      - MYSQL_USER=${MYSQL_USER:-root}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-password}
+      - MYSQL_USER=${MYSQL_USER:-fastapi_user}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-fastapi_password}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root_password}
       - MYSQL_DATABASE=${MYSQL_DATABASE:-fastapi_web}
-      - DATABASE_URL=mysql+pymysql://${MYSQL_USER:-root}:${MYSQL_PASSWORD:-password}@mysql:${MYSQL_PORT:-3306}/${MYSQL_DATABASE:-fastapi_web}
+      - DATABASE_URL=mysql+pymysql://${MYSQL_USER:-fastapi_user}:${MYSQL_PASSWORD:-fastapi_password}@mysql:${MYSQL_PORT:-3306}/${MYSQL_DATABASE:-fastapi_web}
       - REDIS_HOST=redis
       - REDIS_PORT=${REDIS_PORT:-6379}
       - REDIS_DB=${REDIS_DB:-0}
@@ -50,7 +51,7 @@ services:
     image: mysql:8.0
     container_name: fastapi-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD:-password}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-fastapi_web}
       MYSQL_USER: ${MYSQL_USER:-fastapi_user}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-fastapi_password}
