@@ -13,7 +13,8 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 # 项目路径
-PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$SCRIPT_DIR/.."
 SERVICE_NAME="fastapi-web"
 
 echo -e "${BLUE}FastAPI Web 自动启动设置${NC}"
@@ -47,6 +48,7 @@ RemainAfterExit=yes
 WorkingDirectory=$PROJECT_DIR
 ExecStart=/usr/bin/docker compose up -d
 ExecStop=/usr/bin/docker compose down
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 TimeoutStartSec=300
 TimeoutStopSec=60
 User=$SUDO_USER
@@ -61,6 +63,9 @@ EOF
     echo "启用服务"
     systemctl enable "$SERVICE_NAME"
 
+    echo "测试服务配置..."
+    systemctl start "$SERVICE_NAME" 2>/dev/null || echo "服务启动测试失败，请检查配置"
+
     echo -e "${GREEN}systemd 服务已设置完成${NC}"
     echo ""
     echo "管理命令:"
@@ -68,6 +73,8 @@ EOF
     echo "  停止: sudo systemctl stop $SERVICE_NAME"
     echo "  状态: sudo systemctl status $SERVICE_NAME"
     echo "  日志: sudo journalctl -u $SERVICE_NAME -f"
+    echo ""
+    echo "配置文件: $SERVICE_FILE"
 
 elif [[ "$OSTYPE" == "darwin"* ]]; then
     echo -e "${YELLOW}检测到 macOS 系统，使用 launchd${NC}"
