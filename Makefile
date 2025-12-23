@@ -36,6 +36,8 @@ help: ## 显示帮助信息
 	@echo ""
 	@echo "$(GREEN)示例:$(NC)"
 	@echo "  make up              # 启动所有服务"
+	@echo "  make up-build        # 重新构建并启动（使用缓存）"
+	@echo "  make up-build-nocache # 强制重新构建并启动（不使用缓存）"
 	@echo "  make logs            # 查看实时日志"
 	@echo "  make shell           # 进入应用容器"
 	@echo "  make down            # 停止所有服务"
@@ -50,6 +52,15 @@ up: ## 启动所有服务
 up-build: ## 重新构建并启动服务
 	@echo "$(BLUE)[INFO]$(NC) 重新构建镜像并启动..."
 	@docker compose up -d --build
+	@sleep 2
+	@echo "$(GREEN)[SUCCESS]$(NC) 服务已启动"
+	@make health
+
+up-build-nocache: ## 重新构建并启动服务（不使用缓存）
+	@echo "$(BLUE)[INFO]$(NC) 强制重新构建镜像..."
+	@docker compose build --no-cache
+	@echo "$(BLUE)[INFO]$(NC) 启动服务..."
+	@docker compose up -d
 	@sleep 2
 	@echo "$(GREEN)[SUCCESS]$(NC) 服务已启动"
 	@make health
@@ -85,6 +96,11 @@ logs-redis: ## 查看 Redis 日志
 build: ## 构建 Docker 镜像
 	@echo "$(BLUE)[INFO]$(NC) 构建 Docker 镜像..."
 	@docker compose build
+	@echo "$(GREEN)[SUCCESS]$(NC) 镜像构建完成"
+
+build-nocache: ## 构建 Docker 镜像（不使用缓存）
+	@echo "$(BLUE)[INFO]$(NC) 强制构建 Docker 镜像..."
+	@docker compose build --no-cache
 	@echo "$(GREEN)[SUCCESS]$(NC) 镜像构建完成"
 
 clean: ## 清理容器和卷（谨慎操作）
