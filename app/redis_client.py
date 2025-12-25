@@ -120,6 +120,40 @@ class RedisClient:
             print(f"Redis KEYS 错误: {e}")
             return []
     
+    async def lpush(self, key: str, value: Any) -> int:
+        """从左侧推入列表"""
+        if not self.redis_client:
+            return 0
+        try:
+            # 序列化值
+            if isinstance(value, (dict, list)):
+                value = json.dumps(value, ensure_ascii=False)
+            elif not isinstance(value, str):
+                value = str(value)
+            result = await self.redis_client.lpush(key, value)
+            return result
+        except Exception as e:
+            print(f"Redis LPUSH 错误: {e}")
+            return 0
+    
+    async def lrange(self, key: str, start: int = 0, end: int = -1) -> list:
+        """获取列表范围内的元素"""
+        if not self.redis_client:
+            return []
+        try:
+            values = await self.redis_client.lrange(key, start, end)
+            # 尝试解析 JSON
+            result = []
+            for v in values:
+                try:
+                    result.append(json.loads(v))
+                except json.JSONDecodeError:
+                    result.append(v)
+            return result
+        except Exception as e:
+            print(f"Redis LRANGE 错误: {e}")
+            return []
+    
     async def flushdb(self) -> bool:
         """清空当前数据库"""
         if not self.redis_client:

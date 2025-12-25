@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from datetime import timedelta
-from ..security import authenticate_user, create_access_token, get_current_user
+from ..security import authenticate_user, create_access_token, get_current_user, create_token_from_nextauth
 from ..config import settings
 from pydantic import BaseModel
 
@@ -38,3 +38,16 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 async def read_users_me(current_user: dict = Depends(get_current_user)):
     """获取当前用户信息"""
     return {"username": current_user["username"], "role": current_user["role"]}
+
+@router.post("/token-from-nextauth", response_model=Token)
+async def token_from_nextauth(token_data: dict = Depends(create_token_from_nextauth)):
+    """
+    从 NextAuth token 生成 FastAPI token
+
+    请求头: Authorization: Bearer <nextauth_token>
+
+    要求:
+    - NEXTAUTH_SECRET 已配置
+    - 用户的 email 在 NEXTAUTH_ADMIN_EMAILS 列表中
+    """
+    return token_data

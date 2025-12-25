@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse
 from .config import settings
 from .middleware import setup_middleware
 from .exceptions import setup_exception_handlers
-from .routers import items, system, auth, redis
+from .routers import items, system, auth, redis, doc_logs
 from .redis_client import redis_client
 from . import models
 from .database import engine
@@ -58,6 +58,7 @@ def create_app() -> FastAPI:
     app.include_router(auth.router)  # 认证路由
     app.include_router(items.router)
     app.include_router(redis.router)  # Redis 路由
+    app.include_router(doc_logs.router)  # 文档日志路由
     
     # 自定义 ReDoc 页面
     @app.get("/redoc", response_class=HTMLResponse, include_in_schema=False)

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from .. import crud, schemas
 from ..database import get_db
 from ..security import get_current_user, get_admin_user
@@ -16,9 +16,9 @@ def read_items(
     skip: int = Query(0, ge=0, description="跳过的记录数"),
     limit: int = Query(10, ge=1, le=100, description="返回的记录数"),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)  # 需要认证
+    current_user: Optional[dict] = Depends(lambda: None)  # 公开访问，无需认证
 ):
-    """获取商品列表"""
+    """获取商品列表（公开访问）"""
     items = crud.get_items(db, skip=skip, limit=limit)
     return items
 
@@ -28,19 +28,19 @@ def search_items(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)  # 需要认证
+    current_user: Optional[dict] = Depends(lambda: None)  # 公开访问，无需认证
 ):
-    """搜索商品"""
+    """搜索商品（公开访问）"""
     items = crud.search_items(db, keyword=keyword, skip=skip, limit=limit)
     return items
 
 @router.get("/{item_id}", response_model=schemas.Item)
 def read_item(
-    item_id: int, 
+    item_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)  # 需要认证
+    current_user: Optional[dict] = Depends(lambda: None)  # 公开访问，无需认证
 ):
-    """获取单个商品"""
+    """获取单个商品（公开访问）"""
     db_item = crud.get_item(db, item_id=item_id)
     if db_item is None:
         raise HTTPException(status_code=404, detail="商品未找到")
