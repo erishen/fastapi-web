@@ -13,17 +13,17 @@ class Settings(BaseSettings):
     # 服务器配置
     host: str = "0.0.0.0"
     port: int = 8080
-    debug: bool = os.getenv('DEBUG', 'true').lower() == 'true'  # 默认 True，生产环境设为 false
+    debug: bool = os.getenv('DEBUG', 'false').lower() == 'true'  # 默认 False，开发环境可设为 true
     
     # 数据库配置
     database_url: str = "sqlite:///./app.db"
     
     # Redis 配置
-    redis_url: str = os.getenv('REDIS_URL', 'redis://:redispassword@localhost:6380/0')
+    redis_url: str = os.getenv('REDIS_URL', 'redis://:change-redis-password-in-production@localhost:6380/0')
     redis_host: str = os.getenv('REDIS_HOST', 'localhost')
     redis_port: int = int(os.getenv('REDIS_PORT', '6380'))
     redis_db: int = int(os.getenv('REDIS_DB', '0'))
-    redis_password: str = os.getenv('REDIS_PASSWORD', 'redispassword')
+    redis_password: str = os.getenv('REDIS_PASSWORD', 'change-redis-password-in-production')
     
     # API 文档配置
     docs_url: str = "/docs"
@@ -51,7 +51,7 @@ class Settings(BaseSettings):
     app_env: str = "development"
     
     # JWT 配置（来自 .env 文件）
-    secret_key: str = os.getenv('SECRET_KEY', os.urandom(32).hex())
+    secret_key: str = os.getenv('SECRET_KEY', 'change-this-secret-key-in-production-use-os-urandom-only-in-dev')
     algorithm: str = "HS256"
     access_token_expire_minutes: int = int(os.getenv('ACCESS_TOKEN_EXPIRE_MINUTES', '30'))
 
@@ -64,7 +64,7 @@ class Settings(BaseSettings):
     # 管理员凭据（来自 .env 文件）
     admin_username: str = os.getenv('ADMIN_USERNAME', 'admin')
     admin_password_hash: str = os.getenv('ADMIN_PASSWORD_HASH', '')  # 预计算的密码哈希
-    admin_password: str = os.getenv('ADMIN_PASSWORD', 'secret')  # 兼容：如果未提供哈希则使用明文并警告
+    admin_password: str = os.getenv('ADMIN_PASSWORD', 'change-admin-password-in-production')  # 兼容：如果未提供哈希则使用明文并警告
     
     # 缓存配置
     cache_expire_seconds: int = 3600  # 1小时

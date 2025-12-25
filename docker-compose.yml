@@ -17,8 +17,8 @@ services:
       - MYSQL_HOST=mysql
       - MYSQL_PORT=${MYSQL_PORT:-3306}
       - MYSQL_USER=${MYSQL_USER:-fastapi_user}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-fastapi_password}
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root_password}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-change-mysql-password-in-production}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-change-mysql-root-password-in-production}
       - MYSQL_DATABASE=${MYSQL_DATABASE:-fastapi_web}
       - DATABASE_URL=mysql+pymysql://${MYSQL_USER:-fastapi_user}:${MYSQL_PASSWORD:-fastapi_password}@mysql:${MYSQL_PORT:-3306}/${MYSQL_DATABASE:-fastapi_web}
       - REDIS_HOST=redis
@@ -81,9 +81,9 @@ services:
   redis:
     image: redis:6-alpine
     container_name: fastapi-redis
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redispassword} --bind 0.0.0.0
+    command: ["sh", "-c", "redis-server --appendonly yes --requirepass \"${REDIS_PASSWORD}\" --bind 0.0.0.0"]
     environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-change-redis-password-in-production}
     ports:
       - "${REDIS_EXPOSE_PORT:-6380}:6379"
     volumes:
@@ -92,7 +92,7 @@ services:
       - fastapi-network
     restart: always
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redispassword}", "ping"]
+      test: ["CMD", "sh", "-c", "redis-cli -a \"${REDIS_PASSWORD:-change-redis-password-in-production}\" ping"]
       interval: 10s
       timeout: 5s
       retries: 5

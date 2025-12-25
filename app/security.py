@@ -23,35 +23,17 @@ fake_users_db = {
         "username": settings.admin_username,
         "hashed_password": settings.admin_password_hash or settings.admin_password,  # 优先使用预计算的哈希
         "role": "admin"
-    },
-    "user": {
-        "username": "user",
-        "hashed_password": "$pbkdf2-sha256$30000$k9IaQ.jdG4PQmvO.15oTAg$KBkXq5y3HYlOq7IE2aE1xOPpRlFd.sVc9nNjbVAmxH4",  # secret
-        "role": "user"
     }
+    # 测试用户已移除，生产环境应使用真实数据库
 }
 
-# 初始化时检查并生成密码哈希（如果使用明文）
-def initialize_admin_password():
-    """初始化管理员密码（如果使用明文则生成哈希）"""
-    if not settings.admin_password_hash and settings.admin_password != "secret":
-        print("⚠️  警告：使用明文密码，建议设置 ADMIN_PASSWORD_HASH 环境变量")
-        print(f"   运行以下命令生成密码哈希：")
-        print(f"   python -c \"from passlib.context import CryptContext; ctx = CryptContext(schemes=['pbkdf2_sha256'], deprecated='auto', pbkdf2_sha256__default_rounds=30000); print(ctx.hash('{password}'))\"")
-
-# 应用启动时调用
-initialize_admin_password()
-
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """验证密码 - 支持哈希和明文（开发环境）"""
+    """验证密码 - 仅支持哈希密码"""
     # 如果哈希密码包含 pbkdf2 前缀，使用 hash 验证
     if hashed_password.startswith('$pbkdf2'):
         return pwd_context.verify(plain_password, hashed_password)
-    # 否则，如果是明文（开发环境），直接比较
+    # 不再支持明文密码比较，提高安全性
     else:
-        if not settings.admin_password_hash and hashed_password == settings.admin_password:
-            # 明文密码匹配
-            return True
         # 尝试识别哈希格式并验证
         try:
             return pwd_context.verify(plain_password, hashed_password)
