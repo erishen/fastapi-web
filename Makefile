@@ -131,7 +131,7 @@ health: ## 检查服务健康状态
 	@echo "$(BLUE)[INFO]$(NC) 检查服务健康状态..."
 	@echo ""
 	@echo "$(BLUE)FastAPI 应用:$(NC)"
-	@curl -s http://localhost:$$(grep '^EXPOSE_PORT=' .env 2>/dev/null | cut -d= -f2)/health 2>/dev/null | jq -r 'if .status == "healthy" then "✓ 正常 (数据库: \(.database))" else "✗ 异常" end' 2>/dev/null || echo "$(RED)✗ 未响应$(NC)"
+	@curl -s http://localhost:$$(grep '^PORT=' .env 2>/dev/null | cut -d= -f2)/health 2>/dev/null | jq -r 'if .status == "healthy" then "✓ 正常 (数据库: \(.database))" else "✗ 异常" end' 2>/dev/null || echo "$(RED)✗ 未响应$(NC)"
 	@echo ""
 	@echo "$(BLUE)MySQL 数据库 (宿主机):$(NC)"
 	@if mysqladmin ping -h 127.0.0.1 -P $$(grep '^MYSQL_PORT=' .env 2>/dev/null | cut -d= -f2) -u $$(grep '^MYSQL_USER=' .env 2>/dev/null | cut -d= -f2) -p$$(grep '^MYSQL_PASSWORD=' .env 2>/dev/null | cut -d= -f2) 2>/dev/null; then \

@@ -7,11 +7,9 @@ services:
       args:
         - PORT=${PORT:-8080}
     container_name: fastapi-web-app
-    # 网络模式：使用桥接网络以支持端口映射
-    # 如需使用宿主机网络（host 模式），请将 EXPOSE_PORT 设置为与 PORT 相同的值
-    # 并将 network_mode 改为 host
+    # 端口映射（Docker Desktop for Mac 不支持 host 网络模式的端口映射）
     ports:
-      - "${EXPOSE_PORT:-8081}:${PORT:-8080}"
+      - "${PORT:-8080}:${PORT:-8080}"
     environment:
       - APP_ENV=${APP_ENV}
       - DEBUG=${DEBUG}
@@ -41,7 +39,7 @@ services:
       - ./logs:/app/logs
     restart: always
     healthcheck:
-      test: ["CMD", "/bin/bash", "/app/healthcheck.sh"]
+      test: ["CMD", "sh", "-c", "curl -f http://0.0.0.0:${PORT:-8080}/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
