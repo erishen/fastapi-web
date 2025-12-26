@@ -3,6 +3,8 @@
 .env.local
 .env.*.local
 .env.aliyun
+.env.production
+.env.backup
 
 # Python
 __pycache__/

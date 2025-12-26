@@ -5,6 +5,9 @@ from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from typing import Optional
 import json
+import hmac
+import hashlib
+import base64
 from .config import settings
 
 # 密码加密 - 使用pbkdf2_sha256避免bcrypt问题
@@ -21,10 +24,9 @@ security = HTTPBearer()
 fake_users_db = {
     "admin": {
         "username": settings.admin_username,
-        "hashed_password": settings.admin_password_hash or settings.admin_password,  # 优先使用预计算的哈希
+        "hashed_password": settings.admin_password_hash_required,  # 强制使用哈希
         "role": "admin"
     }
-    # 测试用户已移除，生产环境应使用真实数据库
 }
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -32,13 +34,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     # 如果哈希密码包含 pbkdf2 前缀，使用 hash 验证
     if hashed_password.startswith('$pbkdf2'):
         return pwd_context.verify(plain_password, hashed_password)
-    # 不再支持明文密码比较，提高安全性
-    else:
-        # 尝试识别哈希格式并验证
-        try:
-            return pwd_context.verify(plain_password, hashed_password)
-        except:
-            return False
+    # 拒绝其他格式（包括明文）
+    return False
 
 def get_password_hash(password: str) -> str:
     """生成密码哈希"""
@@ -77,65 +74,94 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         if username is None:
             raise credentials_exception
     except JWTError as e:
-        print(f"⚠️ JWT decode error: {e}")
+        if settings.debug:
+            print(f"JWT decode error: {e}")
         raise credentials_exception
-    
+
     user = fake_users_db.get(username)
     if user is None:
-        print(f"⚠️ User not found in fake_users_db: {username}")
-        print(f"Available users: {list(fake_users_db.keys())}")
         raise credentials_exception
     return user
 
 async def get_admin_user(current_user: dict = Depends(get_current_user)):
     """获取管理员用户"""
-    print(f"🔍 get_admin_user: current_user = {current_user}")
     if current_user["role"] != "admin":
-        print(f"⚠️ Permission denied: role={current_user['role']}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="权限不足"
         )
     return current_user
 
-def verify_nextauth_token(token: str) -> Optional[dict]:
+def verify_nextauth_token_signature(token: str) -> Optional[dict]:
     """
-    验证 NextAuth token 并返回用户信息
+    验证 NextAuth token 的签名并返回用户信息
+
+    NextAuth 使用 JWS (JSON Web Signature) 格式
     """
     if not settings.nextauth_secret:
-        print("⚠️  NEXTAUTH_SECRET 未配置，跳过 NextAuth token 验证")
+        if settings.debug:
+            print("NEXTAUTH_SECRET 未配置，跳过 NextAuth token 验证")
         return None
 
     try:
-        # NextAuth JWT 结构: base64(header).base64(payload).signature
-        # 需要手动解析，因为 NextAuth 使用不同的格式
         parts = token.split('.')
         if len(parts) != 3:
-            print(f"⚠️  NextAuth token 格式错误: {len(parts)} parts")
+            if settings.debug:
+                print(f"NextAuth token 格式错误: {len(parts)} parts")
             return None
 
-        payload_b64 = parts[1]
-        # 添加 padding 如果需要
-        payload_b64 = payload_b64 + '=' * (-len(payload_b64) % 4)
+        # 分离 header, payload, signature
+        header_b64, payload_b64, signature = parts
 
-        # 解码 payload
-        import base64
-        payload_json = base64.urlsafe_b64decode(payload_b64.encode())
+        # 添加 padding
+        def add_padding(b64: str) -> str:
+            return b64 + '=' * (-len(b64) % 4)
+
+        header_b64 = add_padding(header_b64)
+        payload_b64 = add_padding(payload_b64)
+        signature = add_padding(signature)
+
+        # 解码 header 和 payload
+        header_json = base64.urlsafe_b64decode(header_b64.encode()).decode()
+        payload_json = base64.urlsafe_b64decode(payload_b64.encode()).decode()
         payload = json.loads(payload_json)
 
-        # 验证 token 签名（简化版，实际应该验证）
-        # 这里我们信任 token 的内容，只检查是否过期
+        # 验证签名
+        # 重新构建签名字符串
+        message = f"{header_b64}.{payload_b64}"
+
+        # 计算期望的签名
+        expected_signature = hmac.new(
+            settings.nextauth_secret.encode(),
+            message.encode(),
+            hashlib.sha256
+        ).digest()
+
+        # 解码实际签名
+        actual_signature = base64.urlsafe_b64decode(signature)
+
+        # 使用恒定时间比较
+        if not hmac.compare_digest(actual_signature, expected_signature):
+            if settings.debug:
+                print("NextAuth token 签名验证失败")
+            return None
+
+        # 检查过期时间
         if 'exp' in payload:
             exp = payload['exp']
             if exp < datetime.utcnow().timestamp():
-                print(f"⚠️  NextAuth token 已过期: {exp}")
+                if settings.debug:
+                    print(f"NextAuth token 已过期: {exp}")
                 return None
 
-        print(f"✓ NextAuth token 验证成功: {payload.get('email', 'unknown')}")
+        if settings.debug:
+            print(f"NextAuth token 验证成功: {payload.get('email', 'unknown')}")
+
         return payload
 
     except Exception as e:
-        print(f"⚠️  NextAuth token 验证错误: {type(e).__name__}: {e}")
+        if settings.debug:
+            print(f"NextAuth token 验证错误: {type(e).__name__}: {e}")
         return None
 
 async def create_token_from_nextauth(credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
@@ -143,13 +169,11 @@ async def create_token_from_nextauth(credentials: HTTPAuthorizationCredentials =
     从 NextAuth token 创建 FastAPI token
     """
     # 1. 验证 NextAuth token
-    nextauth_payload = verify_nextauth_token(credentials.credentials)
+    nextauth_payload = verify_nextauth_token_signature(credentials.credentials)
     if not nextauth_payload:
-        # 不抛异常，返回 401 让前端降级到密码登录
-        print("⚠️  NextAuth token 验证失败，返回 401")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="无效的 NextAuth token 或 NEXTAUTH_SECRET 未配置",
+            detail="无效的 NextAuth token",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -166,7 +190,7 @@ async def create_token_from_nextauth(credentials: HTTPAuthorizationCredentials =
     if allowed_emails and email not in allowed_emails:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"用户 {email} 不在允许的管理员列表中",
+            detail="权限不足",
         )
 
     # 3. 生成 FastAPI token

@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse
 from .config import settings
 from .middleware import setup_middleware
 from .exceptions import setup_exception_handlers
+from .security_headers import setup_security_headers
 from .routers import items, system, auth, redis, doc_logs
 from .redis_client import redis_client
 from . import models
@@ -10,10 +11,10 @@ from .database import engine
 
 def create_app() -> FastAPI:
     """创建 FastAPI 应用实例"""
-    
+
     # 创建数据表
     models.Base.metadata.create_all(bind=engine)
-    
+
     # 创建应用实例
     app = FastAPI(
         title=settings.app_name,
@@ -24,42 +25,47 @@ def create_app() -> FastAPI:
         openapi_url=settings.openapi_url,
         debug=settings.debug
     )
-    
-    # 设置中间件
-    setup_middleware(app)
-    
+
+    # 设置中间件（顺序很重要）
+    setup_security_headers(app)  # 安全响应头必须最先
+    setup_middleware(app)  # CORS 和速率限制
+
     # 设置异常处理器
     setup_exception_handlers(app)
-    
+
     # 应用启动事件
     @app.on_event("startup")
     async def startup_event():
         """应用启动时的初始化"""
-        print("🚀 FastAPI 应用启动中...")
-        
+        if settings.debug:
+            print("🚀 FastAPI 应用启动中...")
+
         # 连接 Redis
         await redis_client.connect()
-        
-        print("✅ 应用启动完成")
-    
+
+        if settings.debug:
+            print("✅ 应用启动完成")
+
     # 应用关闭事件
     @app.on_event("shutdown")
     async def shutdown_event():
         """应用关闭时的清理"""
-        print("🛑 FastAPI 应用关闭中...")
-        
+        if settings.debug:
+            print("🛑 FastAPI 应用关闭中...")
+
         # 断开 Redis 连接
         await redis_client.disconnect()
-        
-        print("✅ 应用关闭完成")
-    
+
+        if settings.debug:
+            print("✅ 应用关闭完成")
+
     # 注册路由
     app.include_router(system.router)
     app.include_router(auth.router)  # 认证路由
     app.include_router(items.router)
     app.include_router(redis.router)  # Redis 路由
     app.include_router(doc_logs.router)  # 文档日志路由
-    
+
     # 自定义 ReDoc 页面
     @app.get("/redoc", response_class=HTMLResponse, include_in_schema=False)
     async def custom_redoc():
@@ -90,13 +96,13 @@ def create_app() -> FastAPI:
         <body>
             <div class="loading" id="loading">正在加载 API 文档...</div>
             <div id="redoc-container"></div>
-            
+
             <script src="https://unpkg.com/redoc@2.0.0/bundles/redoc.standalone.js"></script>
             <script>
                 document.addEventListener('DOMContentLoaded', function() {
                     const loading = document.getElementById('loading');
                     const container = document.getElementById('redoc-container');
-                    
+
                     try {
                         Redoc.init('/openapi.json', {
                             theme: {
@@ -107,17 +113,19 @@ def create_app() -> FastAPI:
                                 }
                             }
                         }, container);
-                        
+
                         // 隐藏加载提示
                         loading.style.display = 'none';
                     } catch (error) {
                         loading.innerHTML = '加载失败，请尝试刷新页面或使用 <a href="/docs">Swagger UI</a>';
-                        console.error('ReDoc initialization failed:', error);
+                        if (typeof console !== 'undefined') {
+                            console.error('ReDoc initialization failed:', error);
+                        }
                     }
                 });
             </script>
         </body>
         </html>
         """
-    
+
     return app

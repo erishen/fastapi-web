@@ -1,269 +1,170 @@
-# FastAPI Web 应用
+# FastAPI Web 项目
 
-一个基于 FastAPI 的商品管理系统，支持 Docker 容器化部署。
+一个基于 FastAPI 的商品管理系统。
 
-## 🚀 快速开始
+## 快速开始
 
-### 启动应用
+### 本地开发环境
 
-```bash
-# 使用 Make（推荐）
-make up
-
-# 或使用脚本
-./docker-start.sh up
-
-# 或使用 Docker Compose
-docker compose up -d
-```
-
-### 访问应用
-
-- **API 文档**: http://localhost:8080/docs
-- **应用首页**: http://localhost:8080
-
-### 停止应用
+确保 Mac 上已安装并运行 MySQL 和 Redis：
 
 ```bash
-make down
+# 安装 MySQL（如果未安装）
+brew install mysql
+brew services start mysql
+
+# 安装 Redis（如果未安装）
+brew install redis
+brew services start redis
 ```
 
-## 📁 项目结构
+启动开发环境：
+
+```bash
+# 启动服务
+./deploy-dev.sh
+
+# 停止服务
+./stop-dev.sh
+```
+
+访问地址：
+- API: http://localhost:8080
+- API 文档: http://localhost:8080/docs
+
+### 生产环境部署
+
+详细部署指南请查看 [DEPLOYMENT.md](./DEPLOYMENT.md)
+
+```bash
+# 在服务器上运行
+sudo ./deploy-prod.sh
+```
+
+## 项目结构
 
 ```
 fastapi-web/
-├── app/                    # 应用源代码
-│   ├── routers/            # API 路由
-│   ├── config.py           # 应用配置
-│   ├── database.py         # 数据库连接
-│   ├── models.py           # 数据模型
-│   ├── schemas.py          # 数据验证
-│   ├── security.py         # 安全认证
-│   ├── redis_client.py     # Redis 客户端
-│   ├── middleware.py       # 中间件
-│   ├── exceptions.py       # 异常处理
-│   ├── crud.py             # 数据库操作
-│   ├── factory.py          # 应用工厂
-│   └── main.py             # 应用入口
-│
-├── docs/                   # 文档
-│   ├── DOCKER_SETUP.md     # Docker 部署指南
-│   └── DOCKER_QUICK_START.md # Docker 快速参考
-│
-├── config/                 # 配置文件
-│   ├── .env.example        # 环境变量示例
-│   ├── .env.docker         # Docker 环境变量
-│
-├── scripts/                # 脚本文件
-├── logs/                   # 日志目录
-├── backups/                # 备份目录
-├── ssl/                    # SSL 证书目录
-│
-├── Dockerfile              # Docker 镜像构建
-├── docker compose.yml      # Docker Compose 配置
-├── docker-start.sh         # Docker 启动脚本（Linux/macOS）
-├── docker-start.bat        # Docker 启动脚本（Windows）
-├── Makefile                # Make 命令
-├── QUICK_REFERENCE.md      # 快速参考卡片
-├── requirements.txt        # Python 依赖
-└── .gitignore              # Git 忽略文件
+├── app/                    # 应用代码
+│   ├── api/               # API 路由
+│   ├── models/            # 数据模型
+│   ├── schemas/           # Pydantic schemas
+│   ├── security.py        # 安全相关（JWT、认证）
+│   ├── security_headers.py # 安全响应头
+│   ├── middleware.py      # 中间件（速率限制）
+│   ├── config.py          # 配置管理
+│   └── factory.py         # 应用工厂
+├── scripts/               # 脚本文件
+├── logs/                  # 日志文件
+├── docker-compose.yml     # Docker Compose 配置
+├── Dockerfile            # Docker 镜像配置
+├── .env.local            # 本地开发环境变量
+├── .env.production       # 生产环境变量模板
+├── deploy-dev.sh         # 开发环境部署脚本
+├── stop-dev.sh           # 停止开发环境脚本
+├── deploy-prod.sh        # 生产环境部署脚本
+└── DEPLOYMENT.md         # 详细部署文档
 ```
 
-## 🔧 常用命令
+## 环境变量
 
-```bash
-# 启动/停止
-make up              # 启动所有服务
-make down            # 停止所有服务
-make restart         # 重启所有服务
+### 本地开发 (.env.local)
+使用宿主机的 MySQL 和 Redis，无需独立数据库。
 
-# 查看状态
-make ps              # 查看容器状态
-make health          # 检查服务健康状态
-make logs            # 查看实时日志
+### 生产环境 (.env.production)
+- 连接到服务器上的 MySQL（与 WordPress 共享）
+- 连接到服务器上的 Redis（与 WordPress 共享）
+- 必须配置安全密钥和密码哈希
 
-# 容器操作
-make shell           # 进入应用容器
-make db              # 进入数据库容器
-make redis           # 进入 Redis 容器
-
-# 数据库操作
-make backup          # 备份数据库
-make restore FILE=backups/xxx.sql  # 恢复数据库
-
-# 其他
-make build           # 重新构建镜像
-make clean           # 清理容器和卷
-make help            # 查看所有命令
-```
-
-## 🌐 服务访问
-
-| 服务 | 地址 | 说明 |
-|------|------|------|
-| FastAPI 应用 | http://localhost:8080 | 主应用 |
-| API 文档 | http://localhost:8080/docs | Swagger UI |
-| MySQL | localhost:3307 | 数据库 |
-| Redis | localhost:6380 | 缓存 |
-
-## 📋 数据库连接信息
-
-### MySQL
-```
-主机: localhost
-端口: 3307
-用户名: root
-密码: password
-数据库: fastapi_web
-```
-
-### Redis
-```
-主机: localhost
-端口: 6380
-密码: redispassword
-数据库: 0
-```
-
-## 🔐 环境配置
+## 资源配置
 
 ### 本地开发
+- FastAPI 容器: 256-512MB
+- 使用宿主机 MySQL 和 Redis
+
+### 生产环境（2核2G 机器）
+- FastAPI 应用: 512MB (docker limit)
+- MySQL buffer pool: 256MB
+- Redis max memory: 128MB
+- WordPress (PHP): ~600MB
+- 系统预留: ~200MB
+- **总计: ~1.7GB** ✅
+
+## 安全特性
+
+- ✅ JWT 认证（强制强密钥）
+- ✅ NextAuth token 验证
+- ✅ 多级速率限制
+- ✅ 安全响应头（CSP、HSTS、X-Frame-Options 等）
+- ✅ 密码哈希（bcrypt）
+- ✅ CORS 严格限制
+- ✅ 环境感知错误处理
+- ✅ 审计日志
+
+## 常用命令
 
 ```bash
-# 创建环境变量文件
-cat > .env << EOF
-# 应用配置
-EXPOSE_PORT=8080
-SECRET_KEY=your-secret-key-change-this-in-production
-LOG_LEVEL=info
-DEBUG=true
+# 查看日志
+docker-compose logs -f app
 
-# MySQL 数据库配置 (本地)
-MYSQL_HOST=localhost
-MYSQL_PORT=3306
-MYSQL_USER=root
-MYSQL_PASSWORD=password
-MYSQL_DATABASE=fastapi_web
+# 重启服务
+docker-compose restart app
 
-# Redis 缓存配置 (本地)
-REDIS_HOST=localhost
-REDIS_PORT=6380
-REDIS_PASSWORD=redispassword
-REDIS_DB=0
-REDIS_URL=redis://:redispassword@localhost:6380/0
-EOF
+# 进入容器
+docker-compose exec app bash
 
-# 编辑环境变量
-vim .env
+# 查看资源使用
+docker stats fastapi-web-app
 
-# 重启应用使配置生效
-make restart
+# 生成密码哈希
+python generate_password_hash.py <password>
+
+# 生成安全密钥
+openssl rand -hex 32
 ```
 
-### Docker 环境
+## 故障排查
 
-Docker Compose 会自动使用 `config/.env.docker`
-
-## 📦 依赖管理
-
-### 主要依赖
-
-- **FastAPI** - Web 框架
-- **SQLAlchemy** - ORM
-- **Pydantic** - 数据验证
-- **Redis** - 缓存
-- **PyMySQL** - MySQL 驱动
-- **python-jose** - JWT 认证
-- **passlib** - 密码加密
-
-### 更新依赖
-
+### MySQL 连接失败
 ```bash
-# 查看过期的包
-pip list --outdated
+# 检查 MySQL 是否运行
+mysqladmin ping -h 127.0.0.1
 
-# 更新所有包
-pip install --upgrade -r requirements.txt
-```
-
-## 🐛 故障排查
-
-### 应用无法启动
-
-```bash
-# 查看详细日志
-docker compose logs app
-
-# 检查依赖
-docker compose exec app pip list
-```
-
-### 数据库连接失败
-
-```bash
-# 检查 MySQL 服务
-docker compose ps mysql
-
-# 测试连接
-docker compose exec mysql mysql -uroot -ppassword -e "SELECT 1"
+# 检查数据库是否存在
+mysql -u root -p -e "SHOW DATABASES;"
 ```
 
 ### Redis 连接失败
-
 ```bash
-# 检查 Redis 服务
-docker compose ps redis
-
-# 测试连接
-docker compose exec redis redis-cli ping
+# 检查 Redis 是否运行
+redis-cli ping
 ```
 
-## 📚 文档
-
-- **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - 常用命令速查表
-- **[docs/DOCKER_SETUP.md](docs/DOCKER_SETUP.md)** - Docker 部署完整指南
-- **[docs/DOCKER_QUICK_START.md](docs/DOCKER_QUICK_START.md)** - Docker 快速参考
-- **[readme.md](readme.md)** - 项目原始文档
-
-## 🚢 部署
-
-### Docker 部署
-
+### 容器问题
 ```bash
-# 构建镜像
-docker compose build
+# 查看容器日志
+docker-compose logs app
 
-# 启动服务
-docker compose up -d
-
-# 查看状态
-docker compose ps
+# 重新构建
+docker-compose up -d --build
 ```
 
-### 生产环境检查清单
+## 维护建议
 
-- [ ] 修改所有默认密码
-- [ ] 配置 SSL 证书
-- [ ] 启用 HTTPS
-- [ ] 配置备份策略
-- [ ] 设置监控告警
-- [ ] 配置日志收集
-- [ ] 性能优化
+1. 定期备份数据库
+2. 监控资源使用情况
+3. 及时更新依赖包
+4. 定期查看日志
+5. 配置日志轮转
 
-## 📞 获取帮助
+## 贡献指南
 
-- 查看 **QUICK_REFERENCE.md** 中的常见问题
-- 查看 **docs/DOCKER_SETUP.md** 中的故障排查
-- 查看 **docs/DOCKER_QUICK_START.md** 中的快速参考
+1. Fork 项目
+2. 创建特性分支
+3. 提交更改
+4. 推送到分支
+5. 创建 Pull Request
 
-## 📚 相关资源
-
-- [FastAPI 官方文档](https://fastapi.tiangolo.com/)
-- [Docker 官方文档](https://docs.docker.com/)
-- [Docker Compose 文档](https://docs.docker.com/compose/)
-- [SQLAlchemy 文档](https://docs.sqlalchemy.org/)
-- [Pydantic 文档](https://docs.pydantic.dev/)
-
-## 📄 许可证
+## 许可证
 
 MIT License

@@ -1,4 +1,4 @@
-.PHONY: help up down restart logs build clean status shell db redis backup restore health autostart
+.PHONY: help up down restart logs build clean status shell db redis backup restore health autostart mysql-cli-host redis-cli-host
 
 # 颜色定义 - 根据环境变量决定是否显示颜色
 NO_COLOR := $(shell echo $$NO_COLOR)
@@ -32,7 +32,7 @@ help: ## 显示帮助信息
 	@echo "$(BLUE)FastAPI Web Docker 命令$(NC)"
 	@echo ""
 	@echo "$(GREEN)启动/停止命令:$(NC)"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(BLUE)%-15s$(NC) %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(BLUE)%-18s$(NC) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "$(GREEN)示例:$(NC)"
 	@echo "  make up              # 启动所有服务"
@@ -40,7 +40,11 @@ help: ## 显示帮助信息
 	@echo "  make up-build-nocache # 强制重新构建并启动（不使用缓存）"
 	@echo "  make logs            # 查看实时日志"
 	@echo "  make shell           # 进入应用容器"
+	@echo "  make mysql-cli       # 连接 MySQL 命令行（宿主机）"
+	@echo "  make redis-cli       # 连接 Redis 命令行（宿主机）"
 	@echo "  make down            # 停止所有服务"
+	@echo ""
+	@echo "$(YELLOW)注意: MySQL 和 Redis 运行在宿主机，不通过 Docker 管理$(NC)"
 
 up: ## 启动所有服务
 	@echo "$(BLUE)[INFO]$(NC) 启动 FastAPI Web 服务..."
@@ -87,11 +91,15 @@ logs: ## 查看实时日志
 logs-app: ## 查看应用日志
 	@docker compose logs -f app
 
-logs-mysql: ## 查看 MySQL 日志
-	@docker compose logs -f mysql
+logs-mysql: ## 查看 MySQL 日志 (宿主机)
+	@echo "$(YELLOW)[INFO]$(NC) MySQL 运行在宿主机，使用以下命令查看日志："
+	@echo "  macOS:  brew services list | grep mysql"
+	@echo "  tail -f /usr/local/var/mysql/*.err"
 
-logs-redis: ## 查看 Redis 日志
-	@docker compose logs -f redis
+logs-redis: ## 查看 Redis 日志 (宿主机)
+	@echo "$(YELLOW)[INFO]$(NC) Redis 运行在宿主机，使用以下命令查看日志："
+	@echo "  macOS:  brew services list | grep redis"
+	@echo "  tail -f /usr/local/var/log/redis.log"
 
 build: ## 构建 Docker 镜像
 	@echo "$(BLUE)[INFO]$(NC) 构建 Docker 镜像..."
@@ -123,37 +131,53 @@ health: ## 检查服务健康状态
 	@echo "$(BLUE)[INFO]$(NC) 检查服务健康状态..."
 	@echo ""
 	@echo "$(BLUE)FastAPI 应用:$(NC)"
-	@curl -s http://localhost:$$(grep '^EXPOSE_PORT=' .env | cut -d= -f2)/health || echo "$(RED)✗ 未响应$(NC)"
+	@curl -s http://localhost:$$(grep '^EXPOSE_PORT=' .env 2>/dev/null | cut -d= -f2)/health 2>/dev/null | jq -r 'if .status == "healthy" then "✓ 正常 (数据库: \(.database))" else "✗ 异常" end' 2>/dev/null || echo "$(RED)✗ 未响应$(NC)"
 	@echo ""
-	@echo "$(BLUE)MySQL 数据库:$(NC)"
-	@docker compose exec -T mysql mysqladmin ping -h localhost 2>/dev/null && echo "$(GREEN)✓ 正常$(NC)" || echo "$(RED)✗ 未响应$(NC)"
+	@echo "$(BLUE)MySQL 数据库 (宿主机):$(NC)"
+	@if mysqladmin ping -h 127.0.0.1 -P $$(grep '^MYSQL_PORT=' .env 2>/dev/null | cut -d= -f2) -u $$(grep '^MYSQL_USER=' .env 2>/dev/null | cut -d= -f2) -p$$(grep '^MYSQL_PASSWORD=' .env 2>/dev/null | cut -d= -f2) 2>/dev/null; then \
+		echo "$(GREEN)✓ 正常$(NC)"; \
+	else \
+		echo "$(RED)✗ 未响应$(NC)"; \
+	fi
 	@echo ""
-	@echo "$(BLUE)Redis 缓存:$(NC)"
-	@docker compose exec -T redis sh -c 'redis-cli -a "$$REDIS_PASSWORD" ping 2>/dev/null' && echo "$(GREEN)✓ 正常$(NC)" || echo "$(RED)✗ 未响应$(NC)"
+	@echo "$(BLUE)Redis 缓存 (宿主机):$(NC)"
+	@if redis-cli -h 127.0.0.1 -p 6379 -n 0 -a redis_password ping 2>/dev/null | grep -q PONG; then \
+		echo "$(GREEN)✓ 正常$(NC)"; \
+	else \
+		echo "$(RED)✗ 未响应$(NC)"; \
+	fi
 	@echo ""
 
 shell: ## 进入应用容器
 	@docker compose exec app bash
 
-db: ## 进入 MySQL 容器
-	@docker compose exec mysql bash
+db: ## 连接到宿主机 MySQL
+	@echo "$(YELLOW)[INFO]$(NC) MySQL 运行在宿主机，请使用以下命令连接："
+	@echo "  mysql -h 127.0.0.1 -P $$(grep '^MYSQL_PORT=' .env 2>/dev/null | cut -d= -f2) -u $$(grep '^MYSQL_USER=' .env 2>/dev/null | cut -d= -f2) -p $$(grep '^MYSQL_DATABASE=' .env 2>/dev/null | cut -d= -f2)"
 
-redis: ## 进入 Redis 容器
-	@docker compose exec redis sh
+redis: ## 连接到宿主机 Redis
+	@echo "$(YELLOW)[INFO]$(NC) Redis 运行在宿主机，请使用以下命令连接："
+	@echo "  redis-cli -h 127.0.0.1 -p $$(grep '^REDIS_PORT=' .env 2>/dev/null | cut -d= -f2) -n $$(grep '^REDIS_DB=' .env 2>/dev/null | cut -d= -f2)"
 
-mysql-cli: ## 进入 MySQL 命令行
-	@docker compose exec mysql mysql -uroot -ppassword fastapi_web
+mysql-cli: ## 连接到 MySQL 命令行 (宿主机)
+	@mysql -h 127.0.0.1 -P $$(grep '^MYSQL_PORT=' .env 2>/dev/null | cut -d= -f2) -u $$(grep '^MYSQL_USER=' .env 2>/dev/null | cut -d= -f2) -p$$(grep '^MYSQL_PASSWORD=' .env 2>/dev/null | cut -d= -f2) $$(grep '^MYSQL_DATABASE=' .env 2>/dev/null | cut -d= -f2)
 
-redis-cli: ## 进入 Redis 命令行
-	@docker compose exec redis redis-cli
+mysql-cli-host: ## 使用 root 连接到宿主机 MySQL
+	@mysql -h 127.0.0.1 -P $$(grep '^MYSQL_PORT=' .env 2>/dev/null | cut -d= -f2) -u root -p $$(grep '^MYSQL_DATABASE=' .env 2>/dev/null | cut -d= -f2)
 
-backup: ## 备份数据库
+redis-cli: ## 连接到 Redis 命令行 (宿主机)
+	@redis-cli -h 127.0.0.1 -p $$(grep '^REDIS_PORT=' .env 2>/dev/null | cut -d= -f2) -n $$(grep '^REDIS_DB=' .env 2>/dev/null | cut -d= -f2)
+
+redis-cli-host: ## 连接到宿主机 Redis (本地)
+	@redis-cli -h 127.0.0.1 -p $$(grep '^REDIS_PORT=' .env 2>/dev/null | cut -d= -f2) -n 0
+
+backup: ## 备份数据库 (宿主机)
 	@mkdir -p backups
 	@echo "$(BLUE)[INFO]$(NC) 备份数据库..."
-	@docker compose exec -T mysql mysqldump -uroot -ppassword fastapi_web > backups/mysql_backup_$$(date +%Y%m%d_%H%M%S).sql
+	@mysqldump -h 127.0.0.1 -P $$(grep '^MYSQL_PORT=' .env 2>/dev/null | cut -d= -f2) -u $$(grep '^MYSQL_USER=' .env 2>/dev/null | cut -d= -f2) -p$$(grep '^MYSQL_PASSWORD=' .env 2>/dev/null | cut -d= -f2) $$(grep '^MYSQL_DATABASE=' .env 2>/dev/null | cut -d= -f2) > backups/mysql_backup_$$(date +%Y%m%d_%H%M%S).sql
 	@echo "$(GREEN)[SUCCESS]$(NC) 数据库备份完成"
 
-restore: ## 恢复数据库（使用: make restore FILE=backups/mysql_backup_xxx.sql）
+restore: ## 恢复数据库 (使用: make restore FILE=backups/mysql_backup_xxx.sql)
 	@if [ -z "$(FILE)" ]; then \
 		echo "$(RED)[ERROR]$(NC) 请指定备份文件: make restore FILE=backups/mysql_backup_xxx.sql"; \
 		exit 1; \
@@ -167,7 +191,7 @@ restore: ## 恢复数据库（使用: make restore FILE=backups/mysql_backup_xxx
 	echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
 		echo "$(BLUE)[INFO]$(NC) 恢复数据库..."; \
-		docker compose exec -T mysql mysql -uroot -ppassword fastapi_web < $(FILE); \
+		mysql -h 127.0.0.1 -P $$(grep '^MYSQL_PORT=' .env 2>/dev/null | cut -d= -f2) -u $$(grep '^MYSQL_USER=' .env 2>/dev/null | cut -d= -f2) -p$$(grep '^MYSQL_PASSWORD=' .env 2>/dev/null | cut -d= -f2) $$(grep '^MYSQL_DATABASE=' .env 2>/dev/null | cut -d= -f2) < $(FILE); \
 		echo "$(GREEN)[SUCCESS]$(NC) 数据库恢复完成"; \
 	else \
 		echo "$(BLUE)[INFO]$(NC) 已取消"; \
@@ -194,22 +218,24 @@ info: ## 显示服务信息
 	@echo "  FastAPI 应用: http://localhost:$$(grep '^EXPOSE_PORT=' .env | cut -d= -f2)"
 	@echo "  API 文档:     http://localhost:$$(grep '^EXPOSE_PORT=' .env | cut -d= -f2)/docs"
 	@echo ""
-	@echo "$(BLUE)数据库连接:$(NC)"
-	@echo "  MySQL:  localhost:$$(grep '^MYSQL_EXPOSE_PORT=' .env | cut -d= -f2)"
+	@echo "$(BLUE)数据库连接 (宿主机):$(NC)"
+	@echo "  MySQL:  127.0.0.1:$$(grep '^MYSQL_PORT=' .env | cut -d= -f2)"
 	@echo "  用户名: $$(grep '^MYSQL_USER=' .env | cut -d= -f2)"
-	@echo "  密码:   $$(grep '^MYSQL_PASSWORD=' .env | cut -d= -f2)"
 	@echo "  数据库: $$(grep '^MYSQL_DATABASE=' .env | cut -d= -f2)"
 	@echo ""
-	@echo "$(BLUE)Redis 连接:$(NC)"
-	@echo "  地址: localhost:$$(grep '^REDIS_EXPOSE_PORT=' .env | cut -d= -f2)"
+	@echo "$(BLUE)Redis 连接 (宿主机):$(NC)"
+	@echo "  地址: 127.0.0.1:$$(grep '^REDIS_PORT=' .env | cut -d= -f2)"
+	@echo "  DB:   $$(grep '^REDIS_DB=' .env | cut -d= -f2)"
 	@echo ""
 	@echo "$(BLUE)常用命令:$(NC)"
 	@echo "  make up              # 启动所有服务"
 	@echo "  make logs            # 查看实时日志"
 	@echo "  make shell           # 进入应用容器"
+	@echo "  make mysql-cli       # 连接 MySQL 命令行"
+	@echo "  make redis-cli       # 连接 Redis 命令行"
 	@echo "  make health          # 检查服务健康状态"
 	@echo "  make down            # 停止所有服务"
-	@echo "  make autostart       # 设置系统自动启动"
+	@echo "  make info            # 显示服务信息"
 	@echo ""
 
 autostart: ## 设置系统自动启动

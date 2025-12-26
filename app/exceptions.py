@@ -3,11 +3,26 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 import logging
+from .config import settings
 
 logger = logging.getLogger(__name__)
 
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     """处理 HTTP 异常"""
+    # 生产环境不暴露详细信息
+    if settings.app_env == "production":
+        # 记录错误但不返回详细信息
+        logger.error(f"HTTP exception on {request.url.path}: {exc.status_code}")
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "error": True,
+                "message": "请求失败",
+                "status_code": exc.status_code
+            }
+        )
+
+    # 开发环境返回详细信息
     return JSONResponse(
         status_code=exc.status_code,
         content={
@@ -20,6 +35,19 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     """处理请求验证异常"""
+    # 生产环境不暴露详细验证错误
+    if settings.app_env == "production":
+        logger.error(f"Validation error on {request.url.path}")
+        return JSONResponse(
+            status_code=422,
+            content={
+                "error": True,
+                "message": "请求参数验证失败",
+                "status_code": 422
+            }
+        )
+
+    # 开发环境返回详细信息
     return JSONResponse(
         status_code=422,
         content={
@@ -33,12 +61,35 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 async def general_exception_handler(request: Request, exc: Exception):
     """处理通用异常"""
-    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    # 记录完整错误信息（包括堆栈跟踪）
+    logger.error(
+        f"Unhandled exception on {request.url.path}",
+        exc_info=True,
+        extra={
+            "path": str(request.url.path),
+            "method": request.method,
+            "client_ip": request.headers.get("x-forwarded-for") or request.client.host if request.client else "unknown"
+        }
+    )
+
+    # 生产环境不暴露错误信息
+    if settings.app_env == "production":
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": True,
+                "message": "服务器内部错误，请稍后重试",
+                "status_code": 500
+            }
+        )
+
+    # 开发环境返回详细信息
     return JSONResponse(
         status_code=500,
         content={
             "error": True,
-            "message": "服务器内部错误",
+            "message": str(exc),
+            "type": type(exc).__name__,
             "status_code": 500,
             "path": str(request.url.path)
         }

@@ -5,12 +5,15 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from typing import List, Optional
 from pydantic import BaseModel
+import logging
 
 from .. import models
 from ..database import get_db
 from ..redis_client import redis_client
 from ..config import settings
 from ..security import get_admin_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/api/docs",
@@ -28,19 +31,32 @@ class DocLogRequest(BaseModel):
     details: Optional[str] = None
 
 def verify_api_key(request: Request):
-    """验证 API Key"""
+    """验证 API Key（生产环境必须配置）"""
     api_key = request.headers.get("X-API-Key") or request.query_params.get("api_key")
 
-    if not settings.doc_log_api_key:
-        # 如果未配置 API Key，跳过验证（开发环境）
-        return None
-
-    if not api_key or api_key != settings.doc_log_api_key:
+    # 生产环境必须配置 API Key
+    if settings.app_env == "production" and not settings.doc_log_api_key:
+        logger.error("DOC_LOG_API_KEY 未配置，拒绝访问")
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="无效的 API Key",
-            headers={"WWW-Authenticate": "ApiKey"},
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="服务器配置错误",
         )
+
+    if settings.doc_log_api_key:
+        if not api_key or api_key != settings.doc_log_api_key:
+            # 记录失败尝试（脱敏）
+            client_ip = (
+                request.headers.get("x-forwarded-for", "").split(",")[0].strip() or
+                request.headers.get("x-real-ip") or
+                (request.client.host if request.client else "unknown")
+            )
+            logger.warning(f"Invalid API key attempt from IP: {client_ip}")
+
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="无效的 API Key",
+                headers={"WWW-Authenticate": "ApiKey"},
+            )
     return api_key
 
 @router.post("/log")
@@ -87,11 +103,22 @@ async def log_doc_action(
         # 设置过期时间：7天
         redis_client.expire(log_key, 7 * 24 * 60 * 60)
 
+        # 审计日志（脱敏）
+        if settings.debug:
+            logger.info(f"Doc log created: action={log_data.action}, doc={log_data.doc_slug}, user={log_data.user_email}")
+
         return {"success": True, "message": "日志记录成功"}
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"日志记录失败: {str(e)}")
+        logger.error(f"Failed to create doc log: {str(e)}")
+        # 生产环境不暴露错误详情
+        if settings.app_env == "production":
+            raise HTTPException(
+                status_code=500,
+                detail="日志记录失败"
+            )
+        raise
 
 
 @router.get("/logs")
@@ -126,6 +153,10 @@ async def get_doc_logs(
         # 按时间倒序排序
         logs = query.order_by(desc(models.DocLog.timestamp)).limit(limit).all()
 
+        # 审计日志（脱敏）
+        if settings.debug:
+            logger.info(f"Doc logs retrieved: count={len(logs)}, user={current_user.get('username')}")
+
         return {
             "success": True,
             "logs": [
@@ -144,7 +175,11 @@ async def get_doc_logs(
             ]
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"获取日志失败: {str(e)}")
+        logger.error(f"Failed to retrieve doc logs: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="获取日志失败" if settings.app_env == "production" else str(e)
+        )
 
 
 @router.get("/stats")
@@ -188,4 +223,8 @@ async def get_doc_stats(
         return {"success": True, "stats": stats}
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"获取统计失败: {str(e)}")
+        logger.error(f"Failed to retrieve doc stats: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="获取统计失败" if settings.app_env == "production" else str(e)
+        )

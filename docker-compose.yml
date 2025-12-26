@@ -7,42 +7,38 @@ services:
       args:
         - PORT=${PORT:-8080}
     container_name: fastapi-web-app
+    # 网络模式：使用桥接网络以支持端口映射
+    # 如需使用宿主机网络（host 模式），请将 EXPOSE_PORT 设置为与 PORT 相同的值
+    # 并将 network_mode 改为 host
     ports:
-      - "${EXPOSE_PORT:-8080}:${PORT:-8080}"
+      - "${EXPOSE_PORT:-8081}:${PORT:-8080}"
     environment:
-      - APP_ENV=production
-      - DEBUG=false
-      - PORT=${PORT:-8080}
-      - HOST=0.0.0.0
-      - MYSQL_HOST=mysql
-      - MYSQL_PORT=${MYSQL_PORT:-3306}
-      - MYSQL_USER=${MYSQL_USER:-fastapi_user}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-change-mysql-password-in-production}
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-change-mysql-root-password-in-production}
-      - MYSQL_DATABASE=${MYSQL_DATABASE:-fastapi_web}
-      - DATABASE_URL=mysql+pymysql://${MYSQL_USER:-fastapi_user}:${MYSQL_PASSWORD:-fastapi_password}@mysql:${MYSQL_PORT:-3306}/${MYSQL_DATABASE:-fastapi_web}
-      - REDIS_HOST=redis
-      - REDIS_PORT=${REDIS_PORT:-6379}
-      - REDIS_DB=${REDIS_DB:-0}
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-redispassword}
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-redispassword}@redis:${REDIS_PORT:-6379}/${REDIS_DB:-0}
-      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-this-in-production}
-      - LOG_LEVEL=info
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-}
-      - NEXTAUTH_ADMIN_EMAILS=${NEXTAUTH_ADMIN_EMAILS:-admin@example.com}
-      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
-      - ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH:-}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-secret}
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - APP_ENV=${APP_ENV}
+      - DEBUG=${DEBUG}
+      - PORT=${PORT}
+      - HOST=${HOST}
+      # 使用外部 MySQL（宿主机 - host 网络模式）
+      - MYSQL_HOST=${MYSQL_HOST}
+      - MYSQL_PORT=${MYSQL_PORT}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - DATABASE_URL=${DATABASE_URL}
+      # 使用外部 Redis（宿主机 - host 网络模式）
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_DB=${REDIS_DB}
+      - REDIS_URL=${REDIS_URL}
+      - SECRET_KEY=${SECRET_KEY}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXTAUTH_ADMIN_EMAILS=${NEXTAUTH_ADMIN_EMAILS}
+      - ADMIN_USERNAME=${ADMIN_USERNAME}
+      - ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH}
     volumes:
       - ./app:/app/app
       - ./logs:/app/logs
-    networks:
-      - fastapi-network
     restart: always
     healthcheck:
       test: ["CMD", "/bin/bash", "/app/healthcheck.sh"]
@@ -50,59 +46,3 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-
-  # MySQL 数据库
-  mysql:
-    image: mysql:8.0
-    container_name: fastapi-mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-fastapi_web}
-      MYSQL_USER: ${MYSQL_USER:-fastapi_user}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-fastapi_password}
-      MYSQL_UNIX_PORT: /var/run/mysqld/mysqld.sock
-      TZ: 'Asia/Shanghai'
-    command: --bind-address=0.0.0.0
-    ports:
-      - "${MYSQL_EXPOSE_PORT:-3307}:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-      - ./scripts/init_mysql.sh:/docker-entrypoint-initdb.d/init.sh
-    networks:
-      - fastapi-network
-    restart: always
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # Redis 缓存
-  redis:
-    image: redis:6-alpine
-    container_name: fastapi-redis
-    command: ["sh", "-c", "redis-server --appendonly yes --requirepass \"${REDIS_PASSWORD}\" --bind 0.0.0.0"]
-    environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-change-redis-password-in-production}
-    ports:
-      - "${REDIS_EXPOSE_PORT:-6380}:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - fastapi-network
-    restart: always
-    healthcheck:
-      test: ["CMD", "sh", "-c", "redis-cli -a \"${REDIS_PASSWORD:-change-redis-password-in-production}\" ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-volumes:
-  mysql_data:
-    driver: local
-  redis_data:
-    driver: local
-
-networks:
-  fastapi-network:
-    driver: bridge

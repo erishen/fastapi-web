@@ -17,8 +17,12 @@ COPY requirements.txt .
 # 安装 Python 依赖
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 复制应用代码
+# 复制应用代码（排除 .env 文件）
+COPY .dockerignore .dockerignore
 COPY . .
+
+# 删除镜像内的 .env 文件（使用环境变量代替）
+RUN if [ -f .env ]; then rm .env; fi
 
 # 创建日志目录
 RUN mkdir -p logs
