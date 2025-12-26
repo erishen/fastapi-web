@@ -21,12 +21,15 @@ echo ""
 # 从 .env 读取配置（如果存在）
 if [ -f .env ]; then
     echo "使用 .env 配置"
-    eval "$(grep '^MYSQL_' .env | xargs || true)"
-    eval "$(grep '^REDIS_' .env | xargs || true)"
-elif [ -f .env.aliyun ]; then
-    echo "使用 .env.aliyun 配置"
-    eval "$(grep '^MYSQL_' .env.aliyun | xargs || true)"
-    eval "$(grep '^REDIS_' .env.aliyun | xargs || true)"
+    # 安全方式读取配置，避免特殊字符问题
+    export MYSQL_HOST=$(grep '^MYSQL_HOST=' .env | cut -d= -f2-)
+    export MYSQL_PORT=$(grep '^MYSQL_PORT=' .env | cut -d= -f2-)
+    export MYSQL_USER=$(grep '^MYSQL_USER=' .env | cut -d= -f2-)
+    export MYSQL_PASSWORD=$(grep '^MYSQL_PASSWORD=' .env | cut -d= -f2-)
+    export MYSQL_DATABASE=$(grep '^MYSQL_DATABASE=' .env | cut -d= -f2-)
+    export REDIS_HOST=$(grep '^REDIS_HOST=' .env | cut -d= -f2-)
+    export REDIS_PORT=$(grep '^REDIS_PORT=' .env | cut -d= -f2-)
+    export REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' .env | cut -d= -f2-)
 else
     echo "未找到配置文件，使用默认值"
 fi
