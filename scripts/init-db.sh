@@ -1,21 +1,34 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # 数据库初始化脚本 - 阿里云环境
 
 set -e
 
+# 获取脚本所在目录
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
+# 切换到项目目录
+cd "$PROJECT_DIR"
+
 echo "========================================="
 echo "FastAPI Web 数据库初始化脚本"
 echo "========================================="
 echo ""
+echo "工作目录: $PWD"
+echo ""
 
 # 从 .env 读取配置（如果存在）
 if [ -f .env ]; then
-    eval "$(grep '^MYSQL_' .env | xargs)"
-    eval "$(grep '^REDIS_' .env | xargs)"
+    echo "使用 .env 配置"
+    eval "$(grep '^MYSQL_' .env | xargs || true)"
+    eval "$(grep '^REDIS_' .env | xargs || true)"
 elif [ -f .env.aliyun ]; then
-    eval "$(grep '^MYSQL_' .env.aliyun | xargs)"
-    eval "$(grep '^REDIS_' .env.aliyun | xargs)"
+    echo "使用 .env.aliyun 配置"
+    eval "$(grep '^MYSQL_' .env.aliyun | xargs || true)"
+    eval "$(grep '^REDIS_' .env.aliyun | xargs || true)"
+else
+    echo "未找到配置文件，使用默认值"
 fi
 
 # 默认值

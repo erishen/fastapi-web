@@ -329,15 +329,5 @@ prod-health: ## 检查生产环境健康状态
 
 init-db: ## 初始化数据库（创建 fastapi_web 数据库）
 	@echo "$(BLUE)[INFO]$(NC) 初始化数据库..."
-	@if [ -f .env ]; then \
-		echo "$(YELLOW)[INFO]$(NC) 使用 .env 配置"; \
-		source .env; \
-	elif [ -f .env.aliyun ]; then \
-		echo "$(YELLOW)[INFO]$(NC) 使用 .env.aliyun 配置"; \
-		source .env.aliyun; \
-	else \
-		echo "$(RED)[ERROR]$(NC) 找不到配置文件"; \
-		exit 1; \
-	fi
 	@chmod +x scripts/init-db.sh
 	@./scripts/init-db.sh
