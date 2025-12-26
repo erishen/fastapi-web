@@ -1,18 +1,15 @@
 services:
-  # FastAPI 应用
+  # FastAPI 应用 - 阿里云生产环境配置
   app:
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        - PORT=${PORT:-8080}
+        - PORT=${PORT:-8086}
     container_name: fastapi-web-app
-    # 端口映射（默认，适用于 Docker Desktop/Mac）
-    ports:
-      - "${PORT:-8080}:${PORT:-8080}"
-    # host 网络模式（阿里云/Linux 生产环境推荐）
-    # 当 USE_HOST_NETWORK=true 时启用，注释掉 ports 配置
-    # network_mode: host
+    # 使用 host 网络模式，直接访问宿主机服务
+    # Linux 系统完全支持 host 网络模式，推荐在生产环境使用
+    network_mode: host
     environment:
       - APP_ENV=${APP_ENV}
       - DEBUG=${DEBUG}
@@ -42,7 +39,7 @@ services:
       - ./logs:/app/logs
     restart: always
     healthcheck:
-      test: ["CMD", "sh", "-c", "curl -f http://0.0.0.0:${PORT:-8080}/health || exit 1"]
+      test: ["CMD", "sh", "-c", "curl -f http://0.0.0.0:${PORT:-8086}/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3

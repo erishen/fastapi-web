@@ -1,4 +1,4 @@
-.PHONY: help up down restart logs build clean status shell db redis backup restore health autostart mysql-cli-host redis-cli-host
+.PHONY: help up down restart logs build clean status shell db redis backup restore health autostart mysql-cli-host redis-cli-host prod-up prod-down prod-restart prod-logs prod-build
 
 # 颜色定义 - 根据环境变量决定是否显示颜色
 NO_COLOR := $(shell echo $$NO_COLOR)
@@ -43,6 +43,13 @@ help: ## 显示帮助信息
 	@echo "  make mysql-cli       # 连接 MySQL 命令行（宿主机）"
 	@echo "  make redis-cli       # 连接 Redis 命令行（宿主机）"
 	@echo "  make down            # 停止所有服务"
+	@echo ""
+	@echo "$(YELLOW)生产环境命令（阿里云）:$(NC)"
+	@echo "  make prod-up         # 启动生产环境（使用 docker-compose.prod.yml）"
+	@echo "  make prod-down       # 停止生产环境"
+	@echo "  make prod-restart    # 重启生产环境"
+	@echo "  make prod-logs       # 查看生产环境日志"
+	@echo "  make prod-health     # 检查生产环境健康状态"
 	@echo ""
 	@echo "$(YELLOW)注意: MySQL 和 Redis 运行在宿主机，不通过 Docker 管理$(NC)"
 
@@ -257,3 +264,64 @@ autostart: ## 设置系统自动启动
 		exit 1; \
 	fi
 	@echo "$(GREEN)[SUCCESS]$(NC) 自动启动设置完成"
+
+# ================================
+# 🚀 生产环境命令（阿里云）
+# ================================
+
+prod-up: ## 启动生产环境服务（使用 docker-compose.prod.yml）
+	@echo "$(BLUE)[INFO]$(NC) 启动生产环境服务..."
+	@if [ ! -f .env ]; then \
+		echo "$(YELLOW)[WARNING]$(NC) .env 文件不存在，请先创建配置文件"; \
+		exit 1; \
+	fi
+	@cp .env .env.backup 2>/dev/null || true
+	@if [ -f .env.aliyun ]; then \
+		echo "$(BLUE)[INFO]$(NC) 使用阿里云配置文件 .env.aliyun"; \
+		cp .env.aliyun .env; \
+	fi
+	@docker compose -f docker-compose.prod.yml up -d
+	@sleep 3
+	@echo "$(GREEN)[SUCCESS]$(NC) 生产环境服务已启动"
+	@make prod-health
+
+prod-down: ## 停止生产环境服务
+	@echo "$(BLUE)[INFO]$(NC) 停止生产环境服务..."
+	@docker compose -f docker-compose.prod.yml down
+	@echo "$(GREEN)[SUCCESS]$(NC) 生产环境服务已停止"
+
+prod-restart: ## 重启生产环境服务
+	@echo "$(BLUE)[INFO]$(NC) 重启生产环境服务..."
+	@docker compose -f docker-compose.prod.yml restart
+	@sleep 3
+	@echo "$(GREEN)[SUCCESS]$(NC) 生产环境服务已重启"
+	@make prod-health
+
+prod-logs: ## 查看生产环境日志
+	@docker compose -f docker-compose.prod.yml logs -f
+
+prod-build: ## 构建生产环境镜像
+	@echo "$(BLUE)[INFO]$(NC) 构建生产环境镜像..."
+	@docker compose -f docker-compose.prod.yml build
+	@echo "$(GREEN)[SUCCESS]$(NC) 镜像构建完成"
+
+prod-health: ## 检查生产环境健康状态
+	@echo "$(BLUE)[INFO]$(NC) 检查生产环境健康状态..."
+	@echo ""
+	@echo "$(BLUE)FastAPI 应用 (端口 $(shell grep '^PORT=' .env 2>/dev/null | cut -d= -f2))$(NC):"
+	@curl -s http://localhost:$$(grep '^PORT=' .env 2>/dev/null | cut -d= -f2)/health 2>/dev/null | jq -r 'if .status == "healthy" then "✓ 正常 (数据库: \(.database))" else "✗ 异常" end' 2>/dev/null || echo "$(RED)✗ 未响应$(NC)"
+	@echo ""
+	@echo "$(BLUE)MySQL 数据库 (宿主机):$(NC)"
+	@if mysqladmin ping -h $$(grep '^MYSQL_HOST=' .env 2>/dev/null | cut -d= -f2) -P $$(grep '^MYSQL_PORT=' .env 2>/dev/null | cut -d= -f2) -u $$(grep '^MYSQL_USER=' .env 2>/dev/null | cut -d= -f2) -p$$(grep '^MYSQL_PASSWORD=' .env 2>/dev/null | cut -d= -f2) 2>/dev/null; then \
+		echo "$(GREEN)✓ 正常$(NC)"; \
+	else \
+		echo "$(RED)✗ 未响应$(NC)"; \
+	fi
+	@echo ""
+	@echo "$(BLUE)Redis 缓存 (宿主机):$(NC)"
+	@if redis-cli -h $$(grep '^REDIS_HOST=' .env 2>/dev/null | cut -d= -f2) -p $$(grep '^REDIS_PORT=' .env 2>/dev/null | cut -d= -f2) -n 0 -a $$(grep '^REDIS_PASSWORD=' .env 2>/dev/null | cut -d= -f2) ping 2>/dev/null | grep -q PONG; then \
+		echo "$(GREEN)✓ 正常$(NC)"; \
+	else \
+		echo "$(RED)✗ 未响应$(NC)"; \
+	fi
+	@echo ""
