@@ -58,7 +58,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
                 "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com",
                 "img-src 'self' data: https: https://cdn.jsdelivr.net https://fonts.gstatic.com",
                 "font-src 'self' data: https://cdn.jsdelivr.net https://fonts.gstatic.com https://fonts.googleapis.com",
-                "connect-src 'self' ws: wss:",
+                "connect-src 'self' ws: wss: https://cdn.jsdelivr.net https://unpkg.com",
+                "worker-src 'self' blob:",
             ])
 
         response.headers["Content-Security-Policy"] = "; ".join(csp_directives)

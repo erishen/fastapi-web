@@ -1,4 +1,4 @@
-.PHONY: help up down restart logs build clean status shell db redis backup restore health autostart mysql-cli-host redis-cli-host prod-up prod-down prod-restart prod-logs prod-build init-db prod-debug
+.PHONY: help up down restart logs build clean status shell db redis backup restore health autostart mysql-cli-host redis-cli-host prod-up prod-down prod-restart prod-logs prod-build prod-build-no-cache prod-rebuild init-db prod-debug
 
 # 颜色定义 - 根据环境变量决定是否显示颜色
 NO_COLOR := $(shell echo $$NO_COLOR)
@@ -52,6 +52,9 @@ help: ## 显示帮助信息
 	@echo "  make prod-logs       # 查看生产环境日志"
 	@echo "  make prod-health     # 检查生产环境健康状态"
 	@echo "  make prod-debug      # 调试生产环境问题"
+	@echo "  make prod-build      # 构建生产环境镜像（使用缓存，推荐）"
+	@echo "  make prod-build-no-cache  # 构建生产环境镜像（不使用缓存，首次使用）"
+	@echo "  make prod-rebuild    # 快速重启服务（不重建镜像）"
 	@echo ""
 	@echo "$(YELLOW)注意: MySQL 和 Redis 运行在宿主机，不通过 Docker 管理$(NC)"
 
@@ -302,10 +305,22 @@ prod-restart: ## 重启生产环境服务
 prod-logs: ## 查看生产环境日志
 	@docker compose -f docker-compose.prod.yml logs -f
 
-prod-build: ## 构建生产环境镜像
-	@echo "$(BLUE)[INFO]$(NC) 构建生产环境镜像..."
+prod-build: ## 构建生产环境镜像（使用缓存）
+	@echo "$(BLUE)[INFO]$(NC) 构建生产环境镜像（使用缓存）..."
 	@docker compose -f docker-compose.prod.yml build
 	@echo "$(GREEN)[SUCCESS]$(NC) 镜像构建完成"
+
+prod-build-no-cache: ## 构建生产环境镜像（不使用缓存）
+	@echo "$(YELLOW)[INFO]$(NC) 构建生产环境镜像（不使用缓存，可能较慢）..."
+	@docker compose -f docker-compose.prod.yml build --no-cache
+	@echo "$(GREEN)[SUCCESS]$(NC) 镜像构建完成"
+
+prod-rebuild: ## 重新构建并启动（快速方式：只重启不重建镜像）
+	@echo "$(BLUE)[INFO]$(NC) 快速重启服务（不重建镜像）..."
+	@docker compose -f docker-compose.prod.yml restart
+	@sleep 3
+	@echo "$(GREEN)[SUCCESS]$(NC) 服务已重启"
+	@make prod-health
 
 prod-health: ## 检查生产环境健康状态
 	@echo "$(BLUE)[INFO]$(NC) 检查生产环境健康状态..."

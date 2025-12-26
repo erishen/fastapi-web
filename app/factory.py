@@ -15,13 +15,13 @@ def create_app() -> FastAPI:
     # 创建数据表
     models.Base.metadata.create_all(bind=engine)
 
-    # 创建应用实例
+    # 创建应用实例（禁用默认的 docs，使用自定义的）
     app = FastAPI(
         title=settings.app_name,
         description=settings.app_description,
         version=settings.app_version,
-        docs_url=settings.docs_url,
-        redoc_url=settings.redoc_url,
+        docs_url=None,  # 禁用默认 docs，使用自定义路由
+        redoc_url=None,  # 禁用默认 redoc，使用自定义路由
         openapi_url=settings.openapi_url,
         debug=settings.debug
     )
@@ -66,6 +66,71 @@ def create_app() -> FastAPI:
     app.include_router(redis.router)  # Redis 路由
     app.include_router(doc_logs.router)  # 文档日志路由
 
+    # 自定义 Swagger UI 页面
+    @app.get("/docs", response_class=HTMLResponse, include_in_schema=False)
+    async def custom_swagger_ui():
+        return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>FastAPI Web Application - API Documentation</title>
+            <meta charset="utf-8"/>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.9.0/swagger-ui.css">
+            <style>
+                html {
+                    box-sizing: border-box;
+                    overflow: -moz-scrollbars-vertical;
+                    overflow-y: scroll;
+                }
+                *, *:before, *:after {
+                    box-sizing: inherit;
+                }
+                body {
+                    margin: 0;
+                    padding: 0;
+                }
+            </style>
+            <script>
+                // 阻止 source map 加载请求
+                const originalFetch = window.fetch;
+                window.fetch = function(...args) {
+                    const url = args[0];
+                    if (typeof url === 'string' && url.includes('.map')) {
+                        console.log('Blocking source map request:', url);
+                        return Promise.reject(new Error('Source map blocked'));
+                    }
+                    return originalFetch.apply(this, args);
+                };
+            </script>
+        </head>
+        <body>
+            <div id="swagger-ui"></div>
+            <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.9.0/swagger-ui-bundle.js"></script>
+            <script>
+                window.onload = function() {
+                    const ui = SwaggerUIBundle({
+                        url: '/openapi.json',
+                        dom_id: '#swagger-ui',
+                        presets: [
+                            SwaggerUIBundle.presets.apis,
+                            SwaggerUIBundle.presets.standalone
+                        ],
+                        layout: "BaseLayout",
+                        deepLinking: true,
+                        showExtensions: true,
+                        showCommonExtensions: true,
+                        defaultModelsExpandDepth: 1,
+                        defaultModelExpandDepth: 1,
+                        tryItOutEnabled: true,
+                        filter: true,
+                    });
+                }
+            </script>
+        </body>
+        </html>
+        """
+
     # 自定义 ReDoc 页面
     @app.get("/redoc", response_class=HTMLResponse, include_in_schema=False)
     async def custom_redoc():
@@ -90,6 +155,16 @@ def create_app() -> FastAPI:
                     height: 100vh;
                     font-size: 18px;
                     color: #666;
+                }
+                .error {
+                    text-align: center;
+                    padding: 20px;
+                    max-width: 600px;
+                    margin: 50px auto;
+                }
+                .error a {
+                    color: #32329f;
+                    text-decoration: underline;
                 }
             </style>
         </head>
@@ -117,7 +192,21 @@ def create_app() -> FastAPI:
                         // 隐藏加载提示
                         loading.style.display = 'none';
                     } catch (error) {
-                        loading.innerHTML = '加载失败，请尝试刷新页面或使用 <a href="/docs">Swagger UI</a>';
+                        loading.innerHTML = `
+                            <div class="error">
+                                <h2>ReDoc 加载失败</h2>
+                                <p>如果您看到此错误，可能是浏览器安全策略限制导致的。</p>
+                                <p>请尝试以下方案：</p>
+                                <ul style="text-align: left;">
+                                    <li>刷新页面重试</li>
+                                    <li>使用 <a href="/docs">Swagger UI</a> (推荐)</li>
+                                    <li>清除浏览器缓存后重试</li>
+                                </ul>
+                                <p style="margin-top: 20px; color: #999;">
+                                    错误详情: ${error.message}
+                                </p>
+                            </div>
+                        `;
                         if (typeof console !== 'undefined') {
                             console.error('ReDoc initialization failed:', error);
                         }

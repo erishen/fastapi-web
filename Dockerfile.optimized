@@ -1,0 +1,48 @@
+# 优化的 Dockerfile - 使用 slim 版本和更好的缓存策略
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# 构建参数
+ARG PORT=8080
+
+# 安装系统依赖（合并为单个 RUN 层）
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    curl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# 复制依赖文件（放在前面，这样 requirements.txt 不变时不会重新安装）
+COPY requirements.txt .
+
+# 安装 Python 依赖
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# 复制应用代码
+COPY . .
+
+# 删除镜像内的 .env 文件（使用环境变量代替）
+RUN if [ -f .env ]; then rm .env; fi
+
+# 创建日志目录
+RUN mkdir -p logs
+
+# 复制并设置启动脚本权限
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+# 复制并设置健康检查脚本权限
+COPY healthcheck.sh /app/healthcheck.sh
+RUN chmod +x /app/healthcheck.sh
+
+# 暴露端口
+EXPOSE ${PORT}
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:${PORT}/health || exit 1
+
+# 启动应用
+ENTRYPOINT ["/app/entrypoint.sh"]
