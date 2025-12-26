@@ -1,4 +1,4 @@
-.PHONY: help up down restart logs build clean status shell db redis backup restore health autostart mysql-cli-host redis-cli-host prod-up prod-down prod-restart prod-logs prod-build
+.PHONY: help up down restart logs build clean status shell db redis backup restore health autostart mysql-cli-host redis-cli-host prod-up prod-down prod-restart prod-logs prod-build init-db
 
 # 颜色定义 - 根据环境变量决定是否显示颜色
 NO_COLOR := $(shell echo $$NO_COLOR)
@@ -45,6 +45,7 @@ help: ## 显示帮助信息
 	@echo "  make down            # 停止所有服务"
 	@echo ""
 	@echo "$(YELLOW)生产环境命令（阿里云）:$(NC)"
+	@echo "  make init-db         # 初始化数据库（创建 fastapi_web 数据库）"
 	@echo "  make prod-up         # 启动生产环境（使用 docker-compose.prod.yml）"
 	@echo "  make prod-down       # 停止生产环境"
 	@echo "  make prod-restart    # 重启生产环境"
@@ -325,3 +326,18 @@ prod-health: ## 检查生产环境健康状态
 		echo "$(RED)✗ 未响应$(NC)"; \
 	fi
 	@echo ""
+
+init-db: ## 初始化数据库（创建 fastapi_web 数据库）
+	@echo "$(BLUE)[INFO]$(NC) 初始化数据库..."
+	@if [ -f .env ]; then \
+		echo "$(YELLOW)[INFO]$(NC) 使用 .env 配置"; \
+		source .env; \
+	elif [ -f .env.aliyun ]; then \
+		echo "$(YELLOW)[INFO]$(NC) 使用 .env.aliyun 配置"; \
+		source .env.aliyun; \
+	else \
+		echo "$(RED)[ERROR]$(NC) 找不到配置文件"; \
+		exit 1; \
+	fi
+	@chmod +x scripts/init-db.sh
+	@./scripts/init-db.sh

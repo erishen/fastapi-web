@@ -1,0 +1,89 @@
+#!/bin/bash
+
+# 数据库初始化脚本 - 阿里云环境
+
+set -e
+
+echo "========================================="
+echo "FastAPI Web 数据库初始化脚本"
+echo "========================================="
+echo ""
+
+# 从 .env 读取配置（如果存在）
+if [ -f .env ]; then
+    eval "$(grep '^MYSQL_' .env | xargs)"
+    eval "$(grep '^REDIS_' .env | xargs)"
+elif [ -f .env.aliyun ]; then
+    eval "$(grep '^MYSQL_' .env.aliyun | xargs)"
+    eval "$(grep '^REDIS_' .env.aliyun | xargs)"
+fi
+
+# 默认值
+MYSQL_HOST=${MYSQL_HOST:-127.0.0.1}
+MYSQL_PORT=${MYSQL_PORT:-3306}
+MYSQL_USER=${MYSQL_USER:-root}
+MYSQL_PASSWORD=${MYSQL_PASSWORD:-}
+MYSQL_DATABASE=${MYSQL_DATABASE:-fastapi_web}
+REDIS_HOST=${REDIS_HOST:-127.0.0.1}
+REDIS_PORT=${REDIS_PORT:-6379}
+REDIS_PASSWORD=${REDIS_PASSWORD:-}
+
+echo "数据库配置:"
+echo "  主机: $MYSQL_HOST:$MYSQL_PORT"
+echo "  用户: $MYSQL_USER"
+echo "  数据库: $MYSQL_DATABASE"
+echo ""
+
+# 创建数据库
+echo "创建数据库 $MYSQL_DATABASE ..."
+mysql -h $MYSQL_HOST -P $MYSQL_PORT -u $MYSQL_USER -p$MYSQL_PASSWORD <<EOF
+-- 创建数据库（如果不存在）
+CREATE DATABASE IF NOT EXISTS \`${MYSQL_DATABASE}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- 显示创建的数据库
+SHOW DATABASES LIKE '$MYSQL_DATABASE';
+
+-- 显示字符集信息
+SELECT DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME
+FROM information_schema.SCHEMATA
+WHERE SCHEMA_NAME = '$MYSQL_DATABASE';
+EOF
+
+if [ $? -eq 0 ]; then
+    echo ""
+    echo "✓ 数据库 $MYSQL_DATABASE 创建成功"
+else
+    echo ""
+    echo "✗ 数据库创建失败"
+    exit 1
+fi
+
+# 测试连接
+echo ""
+echo "测试数据库连接..."
+mysql -h $MYSQL_HOST -P $MYSQL_PORT -u $MYSQL_USER -p$MYSQL_PASSWORD -e "USE $MYSQL_DATABASE; SELECT '连接成功' AS status;"
+
+if [ $? -eq 0 ]; then
+    echo "✓ 数据库连接测试通过"
+else
+    echo "✗ 数据库连接测试失败"
+    exit 1
+fi
+
+# 检查 Redis
+echo ""
+echo "检查 Redis 连接..."
+if redis-cli -h $REDIS_HOST -p $REDIS_PORT -n 0 -a $REDIS_PASSWORD ping 2>/dev/null | grep -q PONG; then
+    echo "✓ Redis 连接正常"
+else
+    echo "✗ Redis 连接失败"
+    echo "  请检查 Redis 是否运行: systemctl status redis"
+    echo "  或手动启动: systemctl start redis"
+fi
+
+echo ""
+echo "========================================="
+echo "初始化完成"
+echo "========================================="
+echo ""
+echo "现在可以启动服务: make prod-up"
