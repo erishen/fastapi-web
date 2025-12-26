@@ -52,12 +52,12 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
                 "worker-src 'self' blob: data: https://cdn.jsdelivr.net https://unpkg.com http://localhost:* http://127.0.0.1:*",
             ])
         else:
-            # 生产环境：更严格的限制
+            # 生产环境：更严格的限制，但允许 API 文档 CDN
             csp_directives.extend([
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-                "style-src 'self' 'unsafe-inline'",
-                "img-src 'self' data: https:",
-                "font-src 'self' data:",
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com",
+                "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com",
+                "img-src 'self' data: https: https://cdn.jsdelivr.net https://fonts.gstatic.com",
+                "font-src 'self' data: https://cdn.jsdelivr.net https://fonts.gstatic.com https://fonts.googleapis.com",
                 "connect-src 'self' ws: wss:",
             ])
 

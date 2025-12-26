@@ -1,4 +1,4 @@
-.PHONY: help up down restart logs build clean status shell db redis backup restore health autostart mysql-cli-host redis-cli-host prod-up prod-down prod-restart prod-logs prod-build init-db
+.PHONY: help up down restart logs build clean status shell db redis backup restore health autostart mysql-cli-host redis-cli-host prod-up prod-down prod-restart prod-logs prod-build init-db prod-debug
 
 # 颜色定义 - 根据环境变量决定是否显示颜色
 NO_COLOR := $(shell echo $$NO_COLOR)
@@ -51,6 +51,7 @@ help: ## 显示帮助信息
 	@echo "  make prod-restart    # 重启生产环境"
 	@echo "  make prod-logs       # 查看生产环境日志"
 	@echo "  make prod-health     # 检查生产环境健康状态"
+	@echo "  make prod-debug      # 调试生产环境问题"
 	@echo ""
 	@echo "$(YELLOW)注意: MySQL 和 Redis 运行在宿主机，不通过 Docker 管理$(NC)"
 
@@ -310,7 +311,21 @@ prod-health: ## 检查生产环境健康状态
 	@echo "$(BLUE)[INFO]$(NC) 检查生产环境健康状态..."
 	@echo ""
 	@echo "$(BLUE)FastAPI 应用 (端口 $(shell grep '^PORT=' .env 2>/dev/null | cut -d= -f2))$(NC):"
-	@curl -s http://localhost:$$(grep '^PORT=' .env 2>/dev/null | cut -d= -f2)/health 2>/dev/null | jq -r 'if .status == "healthy" then "✓ 正常 (数据库: \(.database))" else "✗ 异常" end' 2>/dev/null || echo "$(RED)✗ 未响应$(NC)"
+	@if command -v jq >/dev/null 2>&1; then \
+		curl -s http://localhost:$$(grep '^PORT=' .env 2>/dev/null | cut -d= -f2)/health 2>/dev/null | jq -r 'if .status == "healthy" then "✓ 正常 (数据库: \(.database))" else "✗ 异常" end' 2>/dev/null; \
+	else \
+		HEALTH_RESPONSE=$$(curl -s http://localhost:$$(grep '^PORT=' .env 2>/dev/null | cut -d= -f2)/health 2>/dev/null); \
+		if echo "$$HEALTH_RESPONSE" | grep -q '"status":"healthy"'; then \
+			DB_STATUS=$$(echo "$$HEALTH_RESPONSE" | grep -o '"database":"[^"]*"' | cut -d'"' -f4); \
+			echo "✓ 正常 (数据库: $$DB_STATUS)"; \
+		else \
+			if [ -n "$$HEALTH_RESPONSE" ]; then \
+				echo "$$HEALTH_RESPONSE"; \
+			else \
+				echo "$(RED)✗ 未响应$(NC)"; \
+			fi; \
+		fi; \
+	fi
 	@echo ""
 	@echo "$(BLUE)MySQL 数据库 (宿主机):$(NC)"
 	@if mysqladmin ping -h $$(grep '^MYSQL_HOST=' .env 2>/dev/null | cut -d= -f2) -P $$(grep '^MYSQL_PORT=' .env 2>/dev/null | cut -d= -f2) -u $$(grep '^MYSQL_USER=' .env 2>/dev/null | cut -d= -f2) -p$$(grep '^MYSQL_PASSWORD=' .env 2>/dev/null | cut -d= -f2) 2>/dev/null; then \
@@ -326,6 +341,11 @@ prod-health: ## 检查生产环境健康状态
 		echo "$(RED)✗ 未响应$(NC)"; \
 	fi
 	@echo ""
+
+prod-debug: ## 调试生产环境问题
+	@echo "$(BLUE)[INFO]$(NC) 运行生产环境调试..."
+	@chmod +x scripts/debug-prod.sh
+	@./scripts/debug-prod.sh
 
 init-db: ## 初始化数据库（创建 fastapi_web 数据库）
 	@echo "$(BLUE)[INFO]$(NC) 初始化数据库..."
