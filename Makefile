@@ -1,4 +1,4 @@
-.PHONY: help up down restart logs build clean status shell db redis backup restore health autostart mysql-cli-host redis-cli-host prod-up prod-down prod-restart prod-logs prod-build prod-build-no-cache prod-rebuild init-db prod-debug
+.PHONY: help up down restart logs build clean status shell db redis backup restore health autostart mysql-cli-host redis-cli-host prod-up prod-down prod-restart prod-logs prod-build prod-build-no-cache prod-rebuild init-db prod-debug diagnose-frontend
 
 # 颜色定义 - 根据环境变量决定是否显示颜色
 NO_COLOR := $(shell echo $$NO_COLOR)
@@ -55,6 +55,9 @@ help: ## 显示帮助信息
 	@echo "  make prod-build      # 构建生产环境镜像（使用缓存，推荐）"
 	@echo "  make prod-build-no-cache  # 构建生产环境镜像（不使用缓存，首次使用）"
 	@echo "  make prod-rebuild    # 快速重启服务（不重建镜像）"
+	@echo ""
+	@echo "$(YELLOW)故障诊断:$(NC)"
+	@echo "  make diagnose-frontend # 诊断前端 429/403 错误"
 	@echo ""
 	@echo "$(YELLOW)注意: MySQL 和 Redis 运行在宿主机，不通过 Docker 管理$(NC)"
 
@@ -361,6 +364,11 @@ prod-debug: ## 调试生产环境问题
 	@echo "$(BLUE)[INFO]$(NC) 运行生产环境调试..."
 	@chmod +x scripts/debug-prod.sh
 	@./scripts/debug-prod.sh
+
+diagnose-frontend: ## 诊断前端集成问题（429/403 错误）
+	@echo "$(BLUE)[INFO]$(NC) 运行前端问题诊断..."
+	@chmod +x scripts/diagnose-frontend-issues.sh
+	@./scripts/diagnose-frontend-issues.sh
 
 init-db: ## 初始化数据库（创建 fastapi_web 数据库）
 	@echo "$(BLUE)[INFO]$(NC) 初始化数据库..."

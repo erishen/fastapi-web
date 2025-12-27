@@ -34,6 +34,10 @@ services:
       - NEXTAUTH_ADMIN_EMAILS=${NEXTAUTH_ADMIN_EMAILS}
       - ADMIN_USERNAME=${ADMIN_USERNAME}
       - ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH}
+      # 文档日志 API 保护配置
+      - DOC_LOG_API_KEY=${DOC_LOG_API_KEY}
+      - DOC_LOG_RATE_LIMIT=${DOC_LOG_RATE_LIMIT}
+      - DOC_LOG_RATE_LIMIT_WINDOW=${DOC_LOG_RATE_LIMIT_WINDOW}
     volumes:
       - ./app:/app/app
       - ./logs:/app/logs
