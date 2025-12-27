@@ -43,6 +43,61 @@ def create_app() -> FastAPI:
         # 连接 Redis
         await redis_client.connect()
 
+        # 初始化示例商品数据（从配置文件读取）
+        from .database import SessionLocal
+        from . import models
+        import json
+        import os
+
+        db = SessionLocal()
+        try:
+            # 检查是否已有商品数据
+            existing_items = db.query(models.Item).count()
+            if existing_items == 0:
+                # 读取示例商品配置文件
+                sample_data_path = os.path.join(os.path.dirname(__file__), "data", "sample_items.json")
+
+                if os.path.exists(sample_data_path):
+                    with open(sample_data_path, 'r', encoding='utf-8') as f:
+                        sample_config = json.load(f)
+
+                    # 检查是否启用初始化
+                    if sample_config.get("enabled", True):
+                        print("📦 初始化示例商品数据...")
+
+                        items_data = sample_config.get("items", [])
+                        sample_items = []
+
+                        for item_data in items_data:
+                            # 转换布尔值为整数（MySQL兼容）
+                            is_offer_int = 1 if item_data.get("is_offer") else 0
+
+                            sample_items.append(models.Item(
+                                name=item_data["name"],
+                                description=item_data.get("description"),
+                                price=item_data["price"],
+                                is_offer=is_offer_int
+                            ))
+
+                        # 批量插入
+                        for item in sample_items:
+                            db.add(item)
+
+                        db.commit()
+                        print(f"✓ 成功初始化 {len(sample_items)} 个示例商品")
+                    else:
+                        print("ℹ️  示例商品初始化已在配置中禁用")
+                else:
+                    print(f"⚠️  示例商品配置文件不存在: {sample_data_path}")
+            else:
+                print(f"✓ 数据库中已有 {existing_items} 个商品，跳过初始化")
+
+        except Exception as e:
+            db.rollback()
+            print(f"✗ 初始化示例商品失败: {e}")
+        finally:
+            db.close()
+
         if settings.debug:
             print("✅ 应用启动完成")
 

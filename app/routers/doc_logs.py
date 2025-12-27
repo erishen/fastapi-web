@@ -91,7 +91,7 @@ async def log_doc_action(
 
         # 2. 记录到 Redis（快速查询）
         log_key = f"doc:log:{datetime.now().strftime('%Y%m%d')}"
-        redis_client.lpush(log_key, {
+        await redis_client.lpush(log_key, {
             'action': log_data.action,
             'doc_slug': log_data.doc_slug,
             'user_email': log_data.user_email,
@@ -101,7 +101,7 @@ async def log_doc_action(
             'details': log_data.details
         })
         # 设置过期时间：7天
-        redis_client.expire(log_key, 7 * 24 * 60 * 60)
+        await redis_client.expire(log_key, 7 * 24 * 60 * 60)
 
         # 审计日志（脱敏）
         if settings.debug:

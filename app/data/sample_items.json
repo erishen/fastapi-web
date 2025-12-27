@@ -1,0 +1,66 @@
+{
+  "enabled": true,
+  "description": "示例商品数据配置文件",
+  "items": [
+    {
+      "name": "高性能笔记本电脑",
+      "description": "搭载最新一代处理器，16GB 内存，512GB SSD，适合专业开发人员",
+      "price": 8999.00,
+      "is_offer": true
+    },
+    {
+      "name": "无线机械键盘",
+      "description": "Cherry MX 轴体，RGB 背光，蓝牙/有线双模连接，长续航",
+      "price": 499.00,
+      "is_offer": false
+    },
+    {
+      "name": "4K 显示器",
+      "description": "27 英寸 IPS 面板，HDR400 支持，99% sRGB 色域，Type-C 接口",
+      "price": 2599.00,
+      "is_offer": true
+    },
+    {
+      "name": "人体工学椅",
+      "description": "网面透气，多点支撑，可调节腰靠，适合长时间办公使用",
+      "price": 1299.00,
+      "is_offer": false
+    },
+    {
+      "name": "高速固态硬盘",
+      "description": "1TB 容量，NVMe 协议，读取速度 3500MB/s，5年质保",
+      "price": 599.00,
+      "is_offer": true
+    },
+    {
+      "name": "蓝牙降噪耳机",
+      "description": "主动降噪技术，40 小时续航，支持双设备连接",
+      "price": 799.00,
+      "is_offer": false
+    },
+    {
+      "name": "智能手表",
+      "description": "健康监测，运动模式，心率血氧监测，50 米防水",
+      "price": 1499.00,
+      "is_offer": true
+    },
+    {
+      "name": "便携式充电宝",
+      "description": "20000mAh 容量，快充协议，双 USB-C 接口",
+      "price": 199.00,
+      "is_offer": false
+    },
+    {
+      "name": "无线游戏鼠标",
+      "description": "16000 DPI，RGB 灯效，可调节配重，电竞级传感器",
+      "price": 359.00,
+      "is_offer": true
+    },
+    {
+      "name": "高清网络摄像头",
+      "description": "1080P 分辨率，自动对焦，内置麦克风，支持美颜",
+      "price": 299.00,
+      "is_offer": false
+    }
+  ]
+}

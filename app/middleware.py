@@ -6,6 +6,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 import json
 import hashlib
+import os
 from typing import Dict
 
 def setup_cors(app: FastAPI):
@@ -19,21 +20,24 @@ def setup_cors(app: FastAPI):
         max_age=600,  # 10 分钟预检请求缓存
     )
 
-# 速率限制配置
-RATE_LIMITS: Dict[str, Dict[str, int]] = {
-    "default": {
-        "requests": 100,
-        "window": 60  # 60 秒
-    },
-    "strict": {
-        "requests": 20,
-        "window": 60
-    },
-    "login": {
-        "requests": 5,
-        "window": 900  # 15 分钟
+# 速率限制配置（从环境变量读取，支持生产环境调整）
+def _get_rate_limits() -> Dict[str, Dict[str, int]]:
+    return {
+        "default": {
+            "requests": int(os.getenv('RATE_LIMIT_REQUESTS', '100')),
+            "window": int(os.getenv('RATE_LIMIT_WINDOW', '60'))  # 60 秒
+        },
+        "strict": {
+            "requests": int(os.getenv('RATE_LIMIT_STRICT_REQUESTS', '20')),
+            "window": int(os.getenv('RATE_LIMIT_STRICT_WINDOW', '60'))
+        },
+        "login": {
+            "requests": int(os.getenv('RATE_LIMIT_LOGIN_REQUESTS', '30')),
+            "window": int(os.getenv('RATE_LIMIT_LOGIN_WINDOW', '60'))
+        }
     }
-}
+
+RATE_LIMITS = _get_rate_limits()
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """改进的速率限制中间件"""

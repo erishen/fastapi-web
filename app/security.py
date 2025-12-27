@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request, Cookie
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -61,26 +61,77 @@ def authenticate_user(username: str, password: str):
         return False
     return user
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """获取当前用户"""
+async def get_token_from_request(
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer(auto_error=False))
+) -> str:
+    """
+    从请求中获取 token
+
+    优先级：
+    1. Authorization Header (Bearer Token) - 用于 API 调用
+    2. Cookie (httpOnly) - 用于浏览器请求
+
+    Returns:
+        token 字符串
+
+    Raises:
+        HTTPException: 如果没有找到有效的 token
+    """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="无效的认证凭据",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+    # 1. 尝试从 Authorization Header 获取 token
+    if credentials and credentials.credentials:
+        return credentials.credentials
+
+    # 2. 尝试从 cookie 获取 token
+    access_token = request.cookies.get("access_token")
+    if access_token:
+        return access_token
+
+    # 都没有找到
+    raise credentials_exception
+
+async def get_current_user(
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer(auto_error=False))
+):
+    """
+    获取当前用户
+
+    支持两种认证方式：
+    1. Bearer Token (Authorization Header)
+    2. httpOnly Cookie
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="无效的认证凭据",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    # 获取 token
     try:
-        payload = jwt.decode(credentials.credentials, settings.secret_key, algorithms=[settings.algorithm])
+        token = await get_token_from_request(request, credentials)
+    except HTTPException:
+        raise credentials_exception
+
+    # 解析 token
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
-    except JWTError as e:
-        if settings.debug:
-            print(f"JWT decode error: {e}")
+    except JWTError:
         raise credentials_exception
 
     user = fake_users_db.get(username)
     if user is None:
         raise credentials_exception
+
     return user
 
 async def get_admin_user(current_user: dict = Depends(get_current_user)):
@@ -99,15 +150,11 @@ def verify_nextauth_token_signature(token: str) -> Optional[dict]:
     NextAuth 使用 JWS (JSON Web Signature) 格式
     """
     if not settings.nextauth_secret:
-        if settings.debug:
-            print("NEXTAUTH_SECRET 未配置，跳过 NextAuth token 验证")
         return None
 
     try:
         parts = token.split('.')
         if len(parts) != 3:
-            if settings.debug:
-                print(f"NextAuth token 格式错误: {len(parts)} parts")
             return None
 
         # 分离 header, payload, signature
@@ -142,26 +189,17 @@ def verify_nextauth_token_signature(token: str) -> Optional[dict]:
 
         # 使用恒定时间比较
         if not hmac.compare_digest(actual_signature, expected_signature):
-            if settings.debug:
-                print("NextAuth token 签名验证失败")
             return None
 
         # 检查过期时间
         if 'exp' in payload:
             exp = payload['exp']
             if exp < datetime.utcnow().timestamp():
-                if settings.debug:
-                    print(f"NextAuth token 已过期: {exp}")
                 return None
-
-        if settings.debug:
-            print(f"NextAuth token 验证成功: {payload.get('email', 'unknown')}")
 
         return payload
 
-    except Exception as e:
-        if settings.debug:
-            print(f"NextAuth token 验证错误: {type(e).__name__}: {e}")
+    except Exception:
         return None
 
 async def create_token_from_nextauth(credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
