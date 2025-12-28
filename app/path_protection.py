@@ -56,6 +56,7 @@ CRAWLER_SUSPICIOUS_PATTERNS: List[str] = [
     r'/admin',
     r'/login',
     r'/wp-',
+    r'/wordpress',
     r'/phpmyadmin',
     r'/mysql',
     r'/backup',
@@ -63,6 +64,15 @@ CRAWLER_SUSPICIOUS_PATTERNS: List[str] = [
     r'/install',
     r'/test',
     r'/debug',
+    r'/dns-query',
+    r'/actuator',
+    r'/api-docs',
+    r'/v1/models',  # OpenAI/AI API 扫描
+    r'/v1/completions',  # AI 模型调用
+    r'/v1/chat',  # AI 聊天 API
+    r'/api/v1',  # API 版本探测
+    r'/graphql',  # GraphQL 探测
+    r'/favicon.ico',  # 图标请求（爬虫）
 ]
 
 class PathProtectionMiddleware(BaseHTTPMiddleware):
