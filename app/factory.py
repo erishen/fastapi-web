@@ -4,6 +4,8 @@ from .config import settings
 from .middleware import setup_middleware
 from .exceptions import setup_exception_handlers
 from .security_headers import setup_security_headers
+from .ip_filter import setup_ip_filter
+from .path_protection import setup_path_protection
 from .routers import items, system, auth, redis, doc_logs
 from .redis_client import redis_client
 from . import models
@@ -28,6 +30,8 @@ def create_app() -> FastAPI:
 
     # 设置中间件（顺序很重要）
     setup_security_headers(app)  # 安全响应头必须最先
+    setup_ip_filter(app)  # IP 黑名单/白名单过滤
+    setup_path_protection(app)  # 敏感路径保护
     setup_middleware(app)  # CORS 和速率限制
 
     # 设置异常处理器
