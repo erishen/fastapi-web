@@ -48,13 +48,13 @@ help: ## 显示帮助信息
 	@echo "  make init-db         # 初始化数据库（创建 fastapi_web 数据库）"
 	@echo "  make prod-up         # 启动生产环境（使用 docker-compose.prod.yml）"
 	@echo "  make prod-down       # 停止生产环境"
-	@echo "  make prod-restart    # 重启生产环境"
+	@echo "  make prod-restart    # 重启生产环境（修改 .env 后使用）"
 	@echo "  make prod-logs       # 查看生产环境日志"
 	@echo "  make prod-health     # 检查生产环境健康状态"
 	@echo "  make prod-debug      # 调试生产环境问题"
 	@echo "  make prod-build      # 构建生产环境镜像（使用缓存，推荐）"
 	@echo "  make prod-build-no-cache  # 构建生产环境镜像（不使用缓存，首次使用）"
-	@echo "  make prod-rebuild    # 快速重启服务（不重建镜像）"
+	@echo "  make prod-rebuild    # 重新构建镜像并启动（不使用缓存）"
 	@echo ""
 	@echo "$(YELLOW)故障诊断:$(NC)"
 	@echo "  make diagnose-frontend # 诊断前端 429/403 错误"
@@ -318,11 +318,13 @@ prod-build-no-cache: ## 构建生产环境镜像（不使用缓存）
 	@docker compose -f docker-compose.prod.yml build --no-cache
 	@echo "$(GREEN)[SUCCESS]$(NC) 镜像构建完成"
 
-prod-rebuild: ## 重新构建并启动（快速方式：只重启不重建镜像）
-	@echo "$(BLUE)[INFO]$(NC) 快速重启服务（不重建镜像）..."
-	@docker compose -f docker-compose.prod.yml restart
+prod-rebuild: ## 重新构建镜像并启动（不使用缓存）
+	@echo "$(BLUE)[INFO]$(NC) 重新构建生产环境镜像..."
+	@docker compose -f docker-compose.prod.yml build --no-cache
+	@echo "$(BLUE)[INFO]$(NC) 停止并启动服务..."
+	@docker compose -f docker-compose.prod.yml up -d
 	@sleep 3
-	@echo "$(GREEN)[SUCCESS]$(NC) 服务已重启"
+	@echo "$(GREEN)[SUCCESS]$(NC) 镜像已重新构建并启动"
 	@make prod-health
 
 prod-health: ## 检查生产环境健康状态
